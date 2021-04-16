@@ -20,7 +20,7 @@ func main() {
 	commando.
 		SetExecutableName("rotate").
 		SetVersion("0.0.1").
-		SetDescription("Rotate backups locally or in S3 bucket based on backup rotation scheme")
+		SetDescription("Rotate files locally or in S3 bucket based on backup rotation scheme")
 
 	// configure the root command
 	commando.
