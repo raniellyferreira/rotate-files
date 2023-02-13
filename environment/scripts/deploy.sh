@@ -15,3 +15,9 @@ aws s3 cp _dist/$VERSION/ s3://awapi-rotate/$VERSION \
     --exclude "*" \
     --include "rotate-*" \
     --cache-control max-age=3600
+
+aws s3 cp _dist/$VERSION/ s3://awapi-rotate/latest \
+    --recursive \
+    --exclude "*" \
+    --include "rotate-*" \
+    --cache-control max-age=3600
