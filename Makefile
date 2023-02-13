@@ -51,11 +51,6 @@ endif
 
 LDFLAGS += $(EXT_LDFLAGS)
 
-# Define constants based on the client-go version
-K8S_MODULES_VER=$(subst ., ,$(subst v,,$(shell go list -f '{{.Version}}' -m k8s.io/client-go)))
-K8S_MODULES_MAJOR_VER=$(shell echo $$(($(firstword $(K8S_MODULES_VER)) + 1)))
-K8S_MODULES_MINOR_VER=$(word 2,$(K8S_MODULES_VER))
-
 .PHONY: all
 all: build
 
