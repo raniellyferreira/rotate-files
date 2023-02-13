@@ -59,7 +59,7 @@ func TestDeleteHourlyBackups(t *testing.T) {
 
 	assert.Equal(t, rotationScheme.Hourly, len(summaryBackups.Hourly))
 	assert.Equal(t, 3, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Hourly)+3)
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 
 func TestDeleteDailyBackups(t *testing.T) {
@@ -83,7 +83,7 @@ func TestDeleteDailyBackups(t *testing.T) {
 	assert.Equal(t, rotationScheme.Daily, len(summaryBackups.Daily))
 	assert.Equal(t, 1, len(summaryBackups.Hourly))
 	assert.Equal(t, 3, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Daily)+1+3)
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 
 func TestDeleteWeeklyBackups(t *testing.T) {
@@ -110,7 +110,7 @@ func TestDeleteWeeklyBackups(t *testing.T) {
 	assert.Equal(t, rotationScheme.Weekly, len(summaryBackups.Weekly))
 	assert.Equal(t, 1, len(summaryBackups.Monthly))
 	assert.Equal(t, 1, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Weekly)+1+1)
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 
 func TestDeleteMonthlyBackupsStartsMonth(t *testing.T) {
@@ -140,7 +140,7 @@ func TestDeleteMonthlyBackupsStartsMonth(t *testing.T) {
 	assert.Equal(t, rotationScheme.Monthly, len(summaryBackups.Monthly))
 	assert.Equal(t, 1, len(summaryBackups.Yearly))
 	assert.Equal(t, 2, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Monthly)+1+2)
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 
 func TestDeleteMonthlyBackupsEndMonth(t *testing.T) {
@@ -169,7 +169,7 @@ func TestDeleteMonthlyBackupsEndMonth(t *testing.T) {
 	assert.Equal(t, rotationScheme.Monthly, len(summaryBackups.Monthly))
 	assert.Equal(t, 1, len(summaryBackups.Yearly))
 	assert.Equal(t, 1, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Monthly)+1+1)
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 
 func TestDeleteYearlyBackupsWithNoLimitTest(t *testing.T) {
@@ -195,7 +195,7 @@ func TestDeleteYearlyBackupsWithNoLimitTest(t *testing.T) {
 	summaryBackups := backups.RotateOf(&rotationScheme, today)
 
 	assert.Equal(t, 0, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Yearly))
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 
 func TestDeleteYearlyBackupsWithLimitTest(t *testing.T) {
@@ -223,14 +223,5 @@ func TestDeleteYearlyBackupsWithLimitTest(t *testing.T) {
 
 	assert.Equal(t, rotationSchemeWithLimit.Yearly, len(summaryBackups.Yearly))
 	assert.Equal(t, 4, len(summaryBackups.ForDelete))
-	assert.Equal(t, backups.Len(), len(summaryBackups.Yearly)+4)
-}
-
-func TestCount(t *testing.T) {
-	backups := helper.BackupFiles{
-		{Path: "/backup_1", Timestamp: carbon.Now()},
-		{Path: "/backup_2", Timestamp: carbon.Now()},
-		{Path: "/backup_3", Timestamp: carbon.Now()},
-	}
-	assert.Equal(t, 3, len(backups))
+	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }

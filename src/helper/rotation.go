@@ -32,6 +32,19 @@ type BackupRotationScheme struct {
 	DryRun  bool
 }
 
+type BackupSummary struct {
+	Hourly    []Backup
+	Daily     []Backup
+	Weekly    []Backup
+	Monthly   []Backup
+	Yearly    []Backup
+	ForDelete []Backup
+}
+
+func (s BackupSummary) GetTotalCategorized() int {
+	return len(s.Hourly) + len(s.Daily) + len(s.Weekly) + len(s.Monthly) + len(s.Yearly) + len(s.ForDelete)
+}
+
 type Backup struct {
 	Bucket    string
 	Path      string
@@ -119,10 +132,6 @@ func (b Backup) IsSameYear(compare Backup) bool {
 	return b.Timestamp.IsSameYear(compare.Timestamp)
 }
 
-type DeleteFileHandlerFunction func(*Backup)
-
-type SkipFileHandlerFunction func(*Backup)
-
 type BackupFiles []Backup
 
 func (b BackupFiles) Less(i, j int) bool {
@@ -135,15 +144,6 @@ func (b BackupFiles) Swap(i, j int) {
 
 func (b BackupFiles) Len() int {
 	return len(b)
-}
-
-type BackupSummary struct {
-	Hourly    []Backup
-	Daily     []Backup
-	Weekly    []Backup
-	Monthly   []Backup
-	Yearly    []Backup
-	ForDelete []Backup
 }
 
 func (b BackupFiles) Rotate(rotationScheme *BackupRotationScheme) BackupSummary {
