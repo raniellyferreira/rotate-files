@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The install script is based off of the MIT-licensed script from Helm,
+# The install script is based off of the Apache-licensed script from Helm,
 # the package manager for Go: https://github.com/helm/helm/blob/main/scripts/get-helm-3
 
 # To run this script execute:

@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+# Copyright The Rotate Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The script is based off of the Apache-licensed script from Helm,
+# the package manager for Go: https://github.com/helm/helm/blob/main/scripts/validate-license.sh
+
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -23,7 +40,7 @@ if (( ${#failed_license_header[@]} > 0 )); then
 fi
 
 # Use "|| :" to ignore the error code when grep returns empty
-failed_copyright_header=($(find_files | xargs grep -L 'Copyright The Helm Authors.' || :))
+failed_copyright_header=($(find_files | xargs grep -L 'Copyright The Rotate Authors.' || :))
 if (( ${#failed_copyright_header[@]} > 0 )); then
   echo "Some source files are missing the copyright header."
   printf '%s\n' "${failed_copyright_header[@]}"
