@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-VERSION=$(go run src/rotate.go --version | cut -d " " -f 2 | tr -d '[:space:]')
+VERSION=$(go run src/rotate.go version | cut -d " " -f 2 | tr -d '[:space:]')
 
 echo "Building binaries"
 make build-cross

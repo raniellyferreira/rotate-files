@@ -218,7 +218,7 @@ func TestDeleteYearlyBackupsWithLimitTest(t *testing.T) {
 		{Path: "/backup_14", Timestamp: today.SubYears(14)},
 		{Path: "/backup_15", Timestamp: today.SubYears(15)},
 	}
-	// here
+
 	summaryBackups := backups.RotateOf(&rotationSchemeWithLimit, today)
 
 	assert.Equal(t, rotationSchemeWithLimit.Yearly, len(summaryBackups.Yearly))

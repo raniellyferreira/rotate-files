@@ -31,7 +31,7 @@ const (
 	WEEKLY_SHORT_FLAG  = "w"
 	MONTHLY_SHORT_FLAG = "m"
 	YEARLY_SHORT_FLAG  = "y"
-	DRYRUN_SHORT_FLAG  = "dr"
+	DRYRUN_SHORT_FLAG  = "D"
 )
 
 const (

@@ -11,7 +11,7 @@ curl -SsL https://raw.githubusercontent.com/raniellyferreira/rotate-files/master
 ## Usage
 
 ```bash
-rotate --help
+rotate help
 ```
 
 ```console
@@ -30,7 +30,7 @@ Arguments:
 
 Flags: 
    -d, --daily                   number of daily backups to preserve (default: 7)
-   -d, --dry-run                 simulate deletion process (default: false)
+   -D, --dry-run                 simulate deletion process (default: false)
    -h, --help                    displays usage information of the application or a command (default: false)
    -h, --hourly                  number of hourly backups to preserve (default: 24)
    -m, --monthly                 number of monthly backups to preserve (default: 12)
