@@ -23,7 +23,7 @@ func main() {
 		AddArgument(
 			"path",
 			"local directory path or s3:// path",
-			"./").
+			"").
 		AddFlag(
 			strings.Join([]string{config.HOURLY_FLAG, config.HOURLY_SHORT_FLAG}, ","),
 			"number of hourly backups to preserve",
