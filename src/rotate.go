@@ -1,25 +1,21 @@
 package main
 
 import (
-	"log"
 	"rotate/src/config"
 	"rotate/src/handler"
+	"rotate/src/helper"
 	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/thatisuday/commando"
 )
 
-// interface func(map[string]ArgValue, map[string]FlagValue);
-
 func main() {
-	if envErr := godotenv.Load(); envErr != nil {
-		log.Fatal(envErr)
-	}
+	_ = godotenv.Load()
 
 	commando.
 		SetExecutableName("rotate").
-		SetVersion("0.0.1").
+		SetVersion(helper.GetEnv("VERSION", "0.0.1")).
 		SetDescription("Rotate files locally or in S3 bucket based on backup rotation scheme")
 
 	// configure the root command
@@ -59,7 +55,7 @@ func main() {
 			"simulate deletion process",
 			commando.Bool,
 			false).
-		SetAction(handler.HanderRotate)
+		SetAction(handler.HandlerRotate)
 
 	commando.Parse(nil)
 }

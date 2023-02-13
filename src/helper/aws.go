@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/golang-module/carbon"
 )
 
 var ClientS3 *s3.Client
@@ -28,30 +29,34 @@ func loadConfig() {
 // TODO desenvolver
 func DeleteS3File(bucket, prefix string) {}
 
-func GetS3FilesList(bucket, prefix string) *[]RotationObject {
+func GetS3FilesList(bucket, prefix string) *BackupFiles {
 	loadConfig()
 
-	output, err := ClientS3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket: aws.String(bucket),
-		Prefix: aws.String(prefix),
+	// TODO fazer loop para pegar todos os itens
+	result, err := ClientS3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucket),
+		Prefix:  aws.String(prefix),
+		MaxKeys: 1e5,
 	})
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	rotationFiles := []RotationObject{}
-
-	for _, v := range output.Contents {
-		rotationFiles = append(rotationFiles, RotationObject{
-			Bucket:    &bucket,
-			Path:      v.Key,
-			CreatedAt: v.LastModified,
-			Status:    OBJECT_WAITING,
+	var backups = BackupFiles{}
+	for _, obj := range result.Contents {
+		backups = append(backups, Backup{
+			Bucket:    bucket,
+			Path:      *obj.Key,
+			Timestamp: carbon.FromStdTime(*obj.LastModified),
 		})
 	}
 
-	return &rotationFiles
+	// sort.Slice(backups, func(i, j int) bool {
+	// 	return backups[i].Timestamp.Before(backups[j].Timestamp)
+	// })
+
+	return &backups
 }
 
 func GetBucketAndPrefix(fullPath string) (string, string) {
