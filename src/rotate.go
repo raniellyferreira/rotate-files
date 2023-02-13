@@ -3,7 +3,6 @@ package main
 import (
 	"rotate/src/config"
 	"rotate/src/handler"
-	"rotate/src/helper"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -15,7 +14,7 @@ func main() {
 
 	commando.
 		SetExecutableName("rotate").
-		SetVersion(helper.GetEnv("VERSION", "0.0.1")).
+		SetVersion("1.0.0").
 		SetDescription("Rotate files locally or in S3 bucket based on backup rotation scheme")
 
 	// configure the root command

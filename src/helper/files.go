@@ -41,3 +41,7 @@ func ListDir(path string) (BackupFiles, error) {
 
 	return files, nil
 }
+
+func DeleteLocalFile(path string) error {
+	return os.Remove(path)
+}

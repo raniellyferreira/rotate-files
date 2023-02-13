@@ -26,8 +26,13 @@ func loadConfig() {
 	ClientS3 = s3.NewFromConfig(cfg)
 }
 
-// TODO desenvolver
-func DeleteS3File(bucket, prefix string) {}
+func DeleteS3File(bucket, path string) error {
+	_, err := ClientS3.DeleteObject(context.Background(), &s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(path),
+	})
+	return err
+}
 
 func GetS3FilesList(bucket, prefix string) *BackupFiles {
 	loadConfig()
@@ -51,10 +56,6 @@ func GetS3FilesList(bucket, prefix string) *BackupFiles {
 			Timestamp: carbon.FromStdTime(*obj.LastModified),
 		})
 	}
-
-	// sort.Slice(backups, func(i, j int) bool {
-	// 	return backups[i].Timestamp.Before(backups[j].Timestamp)
-	// })
 
 	return &backups
 }

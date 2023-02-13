@@ -32,6 +32,10 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 		DryRun:  dryRunBool,
 	}
 
+	if rotationScheme.DryRun {
+		log.Println(" -------- DryRun mode on")
+	}
+
 	if isS3BucketPath := strings.HasPrefix(path, "s3://"); isS3BucketPath {
 		validateS3EnvironmentsVars()
 		performRotateOnS3(path, rotationScheme)
@@ -44,15 +48,14 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 func performRotateOnS3(path string, rotationScheme *helper.BackupRotationScheme) {
 	bucket, prefix := helper.GetBucketAndPrefix(path)
 	s3Files := helper.GetS3FilesList(bucket, prefix)
-	s3FilesCount := len(*s3Files)
 
-	if s3FilesCount == 0 {
+	if s3Files.Len() == 0 {
 		log.Println("No files found to rotate")
 		os.Exit(0)
 		return
 	}
 
-	if s3FilesCount == 1 {
+	if s3Files.Len() == 1 {
 		log.Println("One file is not eligible for rotate")
 		os.Exit(0)
 		return
@@ -62,32 +65,38 @@ func performRotateOnS3(path string, rotationScheme *helper.BackupRotationScheme)
 
 	log.Println("Yearly matched:")
 	for _, v := range summary.Yearly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Monthly matched:")
 	for _, v := range summary.Monthly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Weekly matched:")
 	for _, v := range summary.Weekly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Daily matched:")
 	for _, v := range summary.Daily {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Hourly matched:")
 	for _, v := range summary.Hourly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
-	log.Println("For Delete matched:")
+	log.Println("Deleted:")
 	for _, v := range summary.ForDelete {
-		log.Println(v.Path, v.Timestamp)
+		if !rotationScheme.DryRun {
+			if err := helper.DeleteS3File(v.Bucket, v.Path); err != nil {
+				log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
+				continue
+			}
+		}
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 }
 
@@ -106,36 +115,54 @@ func performRotateLocally(path string, rotationScheme *helper.BackupRotationSche
 		return
 	}
 
+	if files.Len() == 0 {
+		log.Println("No files found to rotate")
+		os.Exit(0)
+		return
+	}
+
+	if files.Len() == 1 {
+		log.Println("One file is not eligible for rotate")
+		os.Exit(0)
+		return
+	}
+
 	summary := files.Rotate(rotationScheme)
 
 	log.Println("Yearly matched:")
 	for _, v := range summary.Yearly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Monthly matched:")
 	for _, v := range summary.Monthly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Weekly matched:")
 	for _, v := range summary.Weekly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Daily matched:")
 	for _, v := range summary.Daily {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
 	log.Println("Hourly matched:")
 	for _, v := range summary.Hourly {
-		log.Println(v.Path, v.Timestamp)
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 
-	log.Println("For Delete matched:")
+	log.Println("Deleted:")
 	for _, v := range summary.ForDelete {
-		log.Println(v.Path, v.Timestamp)
+		if !rotationScheme.DryRun {
+			if err := helper.DeleteLocalFile(v.Path); err != nil {
+				log.Println("Error on delete local file: ", v.Path, err)
+				continue
+			}
+		}
+		log.Println(" ", v.Path, v.Timestamp)
 	}
 }
 
