@@ -37,7 +37,6 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 	}
 
 	if isS3BucketPath := strings.HasPrefix(path, "s3://"); isS3BucketPath {
-		validateS3EnvironmentsVars()
 		performRotateOnS3(path, rotationScheme)
 		return
 	}
@@ -163,11 +162,5 @@ func performRotateLocally(path string, rotationScheme *helper.BackupRotationSche
 			}
 		}
 		log.Println(" ", v.Path, v.Timestamp)
-	}
-}
-
-func validateS3EnvironmentsVars() {
-	if !helper.EnvExists("AWS_ACCESS_KEY_ID") || !helper.EnvExists("AWS_SECRET_ACCESS_KEY") {
-		log.Fatal("To use S3 is required defined AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment vars ou set ~/.aws/credentials file")
 	}
 }

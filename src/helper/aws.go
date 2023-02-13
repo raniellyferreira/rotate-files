@@ -18,7 +18,7 @@ func loadConfig() {
 		return
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(GetEnv("AWS_PROFILE", "default")))
 	if err != nil {
 		log.Fatalf("failed to load aws configuration, %v", err)
 	}
