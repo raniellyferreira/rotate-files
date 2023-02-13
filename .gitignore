@@ -1,2 +1,6 @@
 /rotate
 .env
+*.txt
+/*.sh
+.vscode/
+_dist/

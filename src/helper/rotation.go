@@ -1,22 +1,13 @@
 package helper
 
 import (
+	"fmt"
 	"sort"
-	"time"
+
+	"github.com/golang-module/carbon"
 )
 
-const OBJECT_PRESERVE = "PRESERVE"
-const OBJECT_WAITING = "WAITING"
-const OBJECT_DELETE = "DELETE"
-
-type RotationObject struct {
-	Bucket    *string
-	Path      *string
-	CreatedAt *time.Time
-	Status    string
-}
-
-type RotationScheme struct {
+type BackupRotationScheme struct {
 	Hourly  int
 	Daily   int
 	Weekly  int
@@ -25,12 +16,189 @@ type RotationScheme struct {
 	DryRun  bool
 }
 
-func RotateObjects(filesObj []RotationObject, rotationScheme *RotationScheme) {
+type Backup struct {
+	Bucket    string
+	Path      string
+	Timestamp carbon.Carbon
+	DeleteMe  bool
+}
 
-	// Ordena os objetos pela data de criação
-	sort.Slice(filesObj, func(i, j int) bool {
-		return filesObj[i].CreatedAt.Before(*filesObj[j].CreatedAt)
-	})
+func (b Backup) String() string {
+	return fmt.Sprintf("Path: %s, Timestamp: %s", b.Path, b.Timestamp)
+}
 
-	// TODO parei aqui fazer a rotaçao dos arquivos
+func (b Backup) IsHourly() bool {
+	return b.IsHourlyOf(carbon.Now())
+}
+
+func (b Backup) IsDaily() bool {
+	return b.IsDailyOf(carbon.Now())
+}
+
+func (b Backup) IsWeekly(limit int64) bool {
+	return b.IsWeeklyOf(carbon.Now(), limit)
+}
+
+func (b Backup) IsMonthly() bool {
+	return b.IsMonthlyOf(carbon.Now())
+}
+
+func (b Backup) IsYearly() bool {
+	return b.IsYearlyOf(carbon.Now())
+}
+
+func (b Backup) IsHourlyOf(date carbon.Carbon) bool {
+	return b.Timestamp.DiffInHours(date) <= carbon.HoursPerDay
+}
+
+func (b Backup) IsDailyOf(date carbon.Carbon) bool {
+	diff := int(b.Timestamp.DiffInDays(date))
+	return diff >= 1 && diff <= carbon.DaysPerWeek
+}
+
+func (b Backup) IsWeeklyOf(date carbon.Carbon, limit int64) bool {
+	return b.Timestamp.DiffInWeeks(date) <= limit && b.Timestamp.IsSunday()
+}
+
+func (b Backup) IsMonthlyOf(date carbon.Carbon) bool {
+	return int(b.Timestamp.DiffInMonths(date)) <= 13 && int(b.Timestamp.DiffInWeeks(date)) >= 4
+}
+
+func (b Backup) IsYearlyOf(date carbon.Carbon) bool {
+	return int(b.Timestamp.DiffInYears(date)) >= 1 && !b.Timestamp.IsSameYear(date)
+}
+
+func (b Backup) IsSameHour(compare Backup) bool {
+	if compare == (Backup{}) {
+		return false
+	}
+	return b.Timestamp.IsSameHour(compare.Timestamp)
+}
+
+func (b Backup) IsSameDay(compare Backup) bool {
+	if compare == (Backup{}) {
+		return false
+	}
+	return b.Timestamp.IsSameDay(compare.Timestamp)
+}
+
+func (b Backup) IsSameWeek(compare Backup) bool {
+	if compare == (Backup{}) {
+		return false
+	}
+	return b.Timestamp.Between(compare.Timestamp.StartOfWeek(), compare.Timestamp.EndOfWeek())
+}
+
+func (b Backup) IsSameMonth(compare Backup) bool {
+	if compare == (Backup{}) {
+		return false
+	}
+	return b.Timestamp.IsSameMonth(compare.Timestamp)
+}
+
+func (b Backup) IsSameYear(compare Backup) bool {
+	if compare == (Backup{}) {
+		return false
+	}
+	return b.Timestamp.IsSameYear(compare.Timestamp)
+}
+
+type DeleteFileHandlerFunction func(*Backup)
+
+type SkipFileHandlerFunction func(*Backup)
+
+type BackupFiles []Backup
+
+func (b BackupFiles) Less(i, j int) bool {
+	return b[i].Timestamp.Gt(b[j].Timestamp)
+}
+
+func (b BackupFiles) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+func (b BackupFiles) Len() int {
+	return len(b)
+}
+
+type BackupSummary struct {
+	Hourly    []Backup
+	Daily     []Backup
+	Weekly    []Backup
+	Monthly   []Backup
+	Yearly    []Backup
+	ForDelete []Backup
+}
+
+func (b BackupFiles) Rotate(rotationScheme *BackupRotationScheme) BackupSummary {
+	return b.RotateOf(rotationScheme, carbon.Now())
+}
+
+func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date carbon.Carbon) BackupSummary {
+
+	// Define os limites de backups a serem mantidos em cada grupo
+	hourlyLimit := rotationScheme.Hourly
+	dailyLimit := rotationScheme.Daily
+	weeklyLimit := rotationScheme.Weekly
+	monthlyLimit := rotationScheme.Monthly
+	yearlyLimit := rotationScheme.Yearly
+
+	var hourly, daily, weekly, monthly, yearly, forDelete BackupFiles
+	var prevHourly, prevDaily, prevWeekly, prevMonthly, prevYearly Backup
+
+	sort.Sort(backups)
+
+	for _, backup := range backups {
+
+		if backup.IsHourlyOf(date) && !backup.IsSameHour(prevHourly) {
+			if len(hourly) < hourlyLimit {
+				hourly = append(hourly, backup)
+				prevHourly = backup
+				continue
+			}
+		}
+
+		if backup.IsDailyOf(date) && !backup.IsSameDay(prevDaily) {
+			if len(daily) < dailyLimit {
+				daily = append(daily, backup)
+				prevDaily = backup
+				continue
+			}
+		}
+
+		if backup.IsWeeklyOf(date, int64(weeklyLimit)) && !backup.IsSameWeek(prevWeekly) {
+			if len(weekly) < weeklyLimit {
+				weekly = append(weekly, backup)
+				prevWeekly = backup
+				continue
+			}
+		}
+
+		if backup.IsMonthlyOf(date) && !backup.IsSameMonth(prevMonthly) {
+			if len(monthly) < monthlyLimit {
+				monthly = append(monthly, backup)
+				prevMonthly = backup
+				continue
+			}
+		}
+
+		if backup.IsYearlyOf(date) && !backup.IsSameYear(prevYearly) {
+			if yearlyLimit < 1 || len(yearly) < yearlyLimit {
+				yearly = append(yearly, backup)
+				prevYearly = backup
+				continue
+			}
+		}
+
+		forDelete = append(forDelete, backup)
+	}
+
+	return BackupSummary{
+		Hourly:    hourly,
+		Daily:     daily,
+		Weekly:    weekly,
+		Monthly:   monthly,
+		Yearly:    yearly,
+		ForDelete: forDelete,
+	}
 }
