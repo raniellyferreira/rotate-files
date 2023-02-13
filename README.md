@@ -18,7 +18,7 @@ rotate --help
 Rotate files locally or in S3 bucket based on backup rotation scheme
 
 Usage:
-   rotate [path] {flags}
+   rotate <path> {flags}
    rotate <command> {flags}
 
 Commands: 
@@ -26,7 +26,7 @@ Commands:
    version                       displays version number
 
 Arguments: 
-   path                          local directory path or s3:// path (default: ./)
+   path                          local directory path or s3:// path
 
 Flags: 
    -d, --daily                   number of daily backups to preserve (default: 7)
