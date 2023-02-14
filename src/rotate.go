@@ -30,7 +30,7 @@ func main() {
 
 	commando.
 		SetExecutableName("rotate").
-		SetVersion("1.0.1").
+		SetVersion("1.0.2").
 		SetDescription("Rotate files locally or in S3 bucket based on backup rotation scheme")
 
 	// configure the root command
@@ -62,7 +62,7 @@ func main() {
 			config.DEFAULT_MONTHLY).
 		AddFlag(
 			strings.Join([]string{config.YEARLY_FLAG, config.YEARLY_SHORT_FLAG}, ","),
-			"number of yearly backups to preserve, set -1 to preserver always",
+			"number of yearly backups to preserve, set 0 to preserver always",
 			commando.Int,
 			config.DEFAULT_YEARLY).
 		AddFlag(

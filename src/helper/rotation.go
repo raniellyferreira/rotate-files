@@ -42,7 +42,12 @@ type BackupSummary struct {
 }
 
 func (s BackupSummary) GetTotalCategorized() int {
-	return len(s.Hourly) + len(s.Daily) + len(s.Weekly) + len(s.Monthly) + len(s.Yearly) + len(s.ForDelete)
+	return len(s.Hourly) +
+		len(s.Daily) +
+		len(s.Weekly) +
+		len(s.Monthly) +
+		len(s.Yearly) +
+		len(s.ForDelete)
 }
 
 type Backup struct {
