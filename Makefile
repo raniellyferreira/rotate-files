@@ -40,7 +40,7 @@ BINARY_VERSION ?= ${GIT_TAG}
 
 # Only set Version if building a tag or VERSION is set
 ifneq ($(BINARY_VERSION),)
-	LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.version=${BINARY_VERSION}
+	LDFLAGS += -X github.com/raniellyferreira/rotate-files/internal/version.version=${BINARY_VERSION}
 endif
 
 VERSION_METADATA = unreleased
@@ -49,9 +49,9 @@ ifneq ($(GIT_TAG),)
 	VERSION_METADATA =
 endif
 
-LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.metadata=${VERSION_METADATA}
-LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.gitCommit=${GIT_COMMIT}
-LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.gitTreeState=${GIT_DIRTY}
+LDFLAGS += -X github.com/raniellyferreira/rotate-files/internal/version.metadata=${VERSION_METADATA}
+LDFLAGS += -X github.com/raniellyferreira/rotate-files/internal/version.gitCommit=${GIT_COMMIT}
+LDFLAGS += -X github.com/raniellyferreira/rotate-files/internal/version.gitTreeState=${GIT_DIRTY}
 LDFLAGS += $(EXT_LDFLAGS)
 
 .PHONY: all
@@ -109,12 +109,12 @@ coverage:
 
 .PHONY: format
 format: $(GOIMPORTS)
-	GO111MODULE=on go list -f '{{.Dir}}' ./... | xargs $(GOIMPORTS) -w -local github.com/raniellyferreira/rotate-files/v1
+	GO111MODULE=on go list -f '{{.Dir}}' ./... | xargs $(GOIMPORTS) -w -local github.com/raniellyferreira/rotate-files
 
 # Generate golden files used in unit tests
 .PHONY: gen-test-golden
 gen-test-golden:
-gen-test-golden: PKG = ./cmd/rotate ./pkg/rotation
+gen-test-golden: PKG = ./cmd/rotate ./pkg/rotate
 gen-test-golden: TESTFLAGS = -update
 gen-test-golden: test-unit
 

@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/raniellyferreira/rotate-files/v1/internal/version"
+	"github.com/raniellyferreira/rotate-files/internal/version"
 	"github.com/thatisuday/commando"
 )
 

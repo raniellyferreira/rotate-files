@@ -14,19 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rotation_test
+package rotate_test
 
 import (
 	"testing"
 
 	"github.com/golang-module/carbon"
+	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/raniellyferreira/rotate-files/v1/pkg/rotation"
 )
 
 var (
-	rotationScheme = rotation.BackupRotationScheme{
+	rotationScheme = rotate.BackupRotationScheme{
 		Hourly:  2,
 		Daily:   5,
 		Weekly:  10,
@@ -34,7 +33,7 @@ var (
 		Yearly:  -1,
 		DryRun:  false,
 	}
-	rotationSchemeWithLimit = rotation.BackupRotationScheme{
+	rotationSchemeWithLimit = rotate.BackupRotationScheme{
 		Hourly:  2,
 		Daily:   5,
 		Weekly:  10,
@@ -48,7 +47,7 @@ func TestDeleteHourlyBackups(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 12).SetHour(11)
 
 	// Teste para backups horários
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_0", Timestamp: today.SubHours(6)},
 		{Path: "/backup_1", Timestamp: today.SubHours(5)},
 		{Path: "/backup_2", Timestamp: today.SubHours(4)},
@@ -67,7 +66,7 @@ func TestDeleteDailyBackups(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 12).SetHour(10)
 
 	// Teste para backups diários
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_1", Timestamp: today.SubDays(1)},
 		{Path: "/backup_1b", Timestamp: today.SubDays(1).SubHours(3)},
 		{Path: "/backup_2", Timestamp: today.SubDays(2)},
@@ -91,7 +90,7 @@ func TestDeleteWeeklyBackups(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 12).SetHour(10)
 
 	// Teste para backups semanais
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_1", Timestamp: today.SubWeeks(1).StartOfWeek()},
 		{Path: "/backup_1b", Timestamp: today.SubWeeks(1).StartOfWeek().SubHours(6)},
 		{Path: "/backup_2", Timestamp: today.SubWeeks(2).StartOfWeek()},
@@ -118,7 +117,7 @@ func TestDeleteMonthlyBackupsStartsMonth(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 1).SetHour(10)
 
 	// Teste para backups mensais
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_1", Timestamp: today.SubMonths(1)},
 		{Path: "/backup_1b", Timestamp: today.SubMonths(1).SubHours(6)},
 		{Path: "/backup_2", Timestamp: today.SubMonths(2)},
@@ -148,7 +147,7 @@ func TestDeleteMonthlyBackupsEndMonth(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 30).SetHour(10)
 
 	// Teste para backups mensais
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_1", Timestamp: today.SubMonths(1)},
 		{Path: "/backup_2", Timestamp: today.SubMonths(2)},
 		{Path: "/backup_3", Timestamp: today.SubMonths(3)},
@@ -177,7 +176,7 @@ func TestDeleteYearlyBackupsWithNoLimitTest(t *testing.T) {
 	today := carbon.CreateFromDate(2022, 12, 30).SetHour(10)
 
 	// Teste para backups anuais
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_2", Timestamp: today.SubYears(2)},
 		{Path: "/backup_3", Timestamp: today.SubYears(3)},
 		{Path: "/backup_4", Timestamp: today.SubYears(4)},
@@ -203,7 +202,7 @@ func TestDeleteYearlyBackupsWithLimitTest(t *testing.T) {
 	today := carbon.CreateFromDate(2022, 12, 30).SetHour(10)
 
 	// Teste para backups anuais
-	backups := rotation.BackupFiles{
+	backups := rotate.BackupFiles{
 		{Path: "/backup_2", Timestamp: today.SubYears(2)},
 		{Path: "/backup_3", Timestamp: today.SubYears(3)},
 		{Path: "/backup_4", Timestamp: today.SubYears(4)},

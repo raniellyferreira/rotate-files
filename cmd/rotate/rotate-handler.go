@@ -23,7 +23,7 @@ import (
 
 	"github.com/thatisuday/commando"
 
-	"github.com/raniellyferreira/rotate-files/v1/pkg/rotation"
+	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 )
 
 func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
@@ -39,7 +39,7 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 	yearlyInt, _ := flags[YEARLY_FLAG].GetInt()
 	dryRunBool, _ := flags[DRYRUN_FLAG].GetBool()
 
-	rotationScheme := &rotation.BackupRotationScheme{
+	rotationScheme := &rotate.BackupRotationScheme{
 		Hourly:  hourlyInt,
 		Daily:   dailyInt,
 		Weekly:  weeklyInt,
@@ -60,7 +60,7 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 	performRotateLocally(path, rotationScheme)
 }
 
-func performRotateOnS3(path string, rotationScheme *rotation.BackupRotationScheme) {
+func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme) {
 	bucket, prefix := GetBucketAndPrefix(path)
 	s3Files := GetS3FilesList(bucket, prefix)
 
@@ -115,7 +115,7 @@ func performRotateOnS3(path string, rotationScheme *rotation.BackupRotationSchem
 	}
 }
 
-func performRotateLocally(path string, rotationScheme *rotation.BackupRotationScheme) {
+func performRotateLocally(path string, rotationScheme *rotate.BackupRotationScheme) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		log.Println("directory does not exist")

@@ -22,8 +22,7 @@ import (
 	"time"
 
 	"github.com/golang-module/carbon"
-
-	"github.com/raniellyferreira/rotate-files/v1/pkg/rotation"
+	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 )
 
 func GetFileInfo(path string) (string, time.Time, error) {
@@ -36,8 +35,8 @@ func GetFileInfo(path string) (string, time.Time, error) {
 	return path, file.ModTime(), nil
 }
 
-func ListDir(path string) (rotation.BackupFiles, error) {
-	var files rotation.BackupFiles
+func ListDir(path string) (rotate.BackupFiles, error) {
+	var files rotate.BackupFiles
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -48,7 +47,7 @@ func ListDir(path string) (rotation.BackupFiles, error) {
 			if err != nil {
 				return err
 			}
-			files = append(files, rotation.Backup{Path: file, Timestamp: carbon.FromStdTime(date)})
+			files = append(files, rotate.Backup{Path: file, Timestamp: carbon.FromStdTime(date)})
 		}
 		return nil
 	})

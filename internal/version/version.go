@@ -17,7 +17,7 @@ limitations under the License.
 # the package manager for Go: https://github.com/helm/helm/blob/main/internal/version/version.go
 */
 
-package version // import "github.com/raniellyferreira/rotate-files/v1/internal/version"
+package version // import "github.com/raniellyferreira/rotate-files/internal/version"
 
 import (
 	"flag"
