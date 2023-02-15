@@ -1,5 +1,3 @@
-package helper
-
 /*
 Copyright The Rotate Authors.
 
@@ -16,12 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package main
+
 import (
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/golang-module/carbon"
+
+	"github.com/raniellyferreira/rotate-files/v1/pkg/rotation"
 )
 
 func GetFileInfo(path string) (string, time.Time, error) {
@@ -34,8 +36,8 @@ func GetFileInfo(path string) (string, time.Time, error) {
 	return path, file.ModTime(), nil
 }
 
-func ListDir(path string) (BackupFiles, error) {
-	var files BackupFiles
+func ListDir(path string) (rotation.BackupFiles, error) {
+	var files rotation.BackupFiles
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -46,7 +48,7 @@ func ListDir(path string) (BackupFiles, error) {
 			if err != nil {
 				return err
 			}
-			files = append(files, Backup{Path: file, Timestamp: carbon.FromStdTime(date)})
+			files = append(files, rotation.Backup{Path: file, Timestamp: carbon.FromStdTime(date)})
 		}
 		return nil
 	})

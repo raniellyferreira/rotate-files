@@ -1,5 +1,3 @@
-package main
-
 /*
 Copyright The Rotate Authors.
 
@@ -16,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package main
+
 import (
-	"rotate/src/config"
-	"rotate/src/handler"
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/raniellyferreira/rotate-files/v1/internal/version"
 	"github.com/thatisuday/commando"
 )
 
@@ -30,10 +29,9 @@ func main() {
 
 	commando.
 		SetExecutableName("rotate").
-		SetVersion("1.0.3").
-		SetDescription("Rotate files locally or in S3 bucket based on backup rotation scheme")
+		SetVersion(version.GetVersion()).
+		SetDescription("Rotate files locally or in S3 bucket based on custom backup rotation scheme")
 
-	// configure the root command
 	commando.
 		Register(nil).
 		AddArgument(
@@ -41,36 +39,36 @@ func main() {
 			"local directory path or s3:// path",
 			"").
 		AddFlag(
-			strings.Join([]string{config.HOURLY_FLAG, config.HOURLY_SHORT_FLAG}, ","),
+			strings.Join([]string{HOURLY_FLAG, HOURLY_SHORT_FLAG}, ","),
 			"number of hourly backups to preserve",
 			commando.Int,
-			config.DEFAULT_HOURLY).
+			DEFAULT_HOURLY).
 		AddFlag(
-			strings.Join([]string{config.DAILY_FLAG, config.DAILY_SHORT_FLAG}, ","),
+			strings.Join([]string{DAILY_FLAG, DAILY_SHORT_FLAG}, ","),
 			"number of daily backups to preserve",
 			commando.Int,
-			config.DEFAULT_DAILY).
+			DEFAULT_DAILY).
 		AddFlag(
-			strings.Join([]string{config.WEEKLY_FLAG, config.WEEKLY_SHORT_FLAG}, ","),
+			strings.Join([]string{WEEKLY_FLAG, WEEKLY_SHORT_FLAG}, ","),
 			"number of weekly backups to preserve",
 			commando.Int,
-			config.DEFAULT_WEEKLY).
+			DEFAULT_WEEKLY).
 		AddFlag(
-			strings.Join([]string{config.MONTHLY_FLAG, config.MONTHLY_SHORT_FLAG}, ","),
+			strings.Join([]string{MONTHLY_FLAG, MONTHLY_SHORT_FLAG}, ","),
 			"number of monthly backups to preserve",
 			commando.Int,
-			config.DEFAULT_MONTHLY).
+			DEFAULT_MONTHLY).
 		AddFlag(
-			strings.Join([]string{config.YEARLY_FLAG, config.YEARLY_SHORT_FLAG}, ","),
+			strings.Join([]string{YEARLY_FLAG, YEARLY_SHORT_FLAG}, ","),
 			"number of yearly backups to preserve, set 0 to preserver always",
 			commando.Int,
-			config.DEFAULT_YEARLY).
+			DEFAULT_YEARLY).
 		AddFlag(
-			strings.Join([]string{config.DRYRUN_FLAG, config.DRYRUN_SHORT_FLAG}, ","),
+			strings.Join([]string{DRYRUN_FLAG, DRYRUN_SHORT_FLAG}, ","),
 			"simulate deletion process",
 			commando.Bool,
 			false).
-		SetAction(handler.HandlerRotate)
+		SetAction(HandlerRotate)
 
 	commando.Parse(nil)
 }

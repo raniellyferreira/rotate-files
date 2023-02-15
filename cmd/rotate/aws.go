@@ -1,5 +1,3 @@
-package helper
-
 /*
 Copyright The Rotate Authors.
 
@@ -16,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package main
+
 import (
 	"context"
 	"log"
@@ -25,6 +25,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/golang-module/carbon"
+
+	"github.com/raniellyferreira/rotate-files/v1/pkg/rotation"
 )
 
 var ClientS3 *s3.Client
@@ -60,7 +62,7 @@ func DeleteS3File(bucket, path string) error {
 	return err
 }
 
-func GetS3FilesList(bucket, prefix string) *BackupFiles {
+func GetS3FilesList(bucket, prefix string) *rotation.BackupFiles {
 	loadConfig()
 
 	// TODO fazer loop para pegar todos os itens
@@ -74,9 +76,9 @@ func GetS3FilesList(bucket, prefix string) *BackupFiles {
 		log.Fatal(err)
 	}
 
-	var backups = BackupFiles{}
+	var backups = rotation.BackupFiles{}
 	for _, obj := range result.Contents {
-		backups = append(backups, Backup{
+		backups = append(backups, rotation.Backup{
 			Bucket:    bucket,
 			Path:      *obj.Key,
 			Timestamp: carbon.FromStdTime(*obj.LastModified),

@@ -1,5 +1,3 @@
-package handler
-
 /*
 Copyright The Rotate Authors.
 
@@ -16,14 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package main
+
 import (
 	"log"
 	"os"
-	"rotate/src/config"
-	"rotate/src/helper"
 	"strings"
 
 	"github.com/thatisuday/commando"
+
+	"github.com/raniellyferreira/rotate-files/v1/pkg/rotation"
 )
 
 func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
@@ -32,14 +32,14 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 
 	log.Println("Starting rotation on", path)
 
-	hourlyInt, _ := flags[config.HOURLY_FLAG].GetInt()
-	dailyInt, _ := flags[config.DAILY_FLAG].GetInt()
-	weeklyInt, _ := flags[config.WEEKLY_FLAG].GetInt()
-	monthlyInt, _ := flags[config.MONTHLY_FLAG].GetInt()
-	yearlyInt, _ := flags[config.YEARLY_FLAG].GetInt()
-	dryRunBool, _ := flags[config.DRYRUN_FLAG].GetBool()
+	hourlyInt, _ := flags[HOURLY_FLAG].GetInt()
+	dailyInt, _ := flags[DAILY_FLAG].GetInt()
+	weeklyInt, _ := flags[WEEKLY_FLAG].GetInt()
+	monthlyInt, _ := flags[MONTHLY_FLAG].GetInt()
+	yearlyInt, _ := flags[YEARLY_FLAG].GetInt()
+	dryRunBool, _ := flags[DRYRUN_FLAG].GetBool()
 
-	rotationScheme := &helper.BackupRotationScheme{
+	rotationScheme := &rotation.BackupRotationScheme{
 		Hourly:  hourlyInt,
 		Daily:   dailyInt,
 		Weekly:  weeklyInt,
@@ -60,9 +60,9 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 	performRotateLocally(path, rotationScheme)
 }
 
-func performRotateOnS3(path string, rotationScheme *helper.BackupRotationScheme) {
-	bucket, prefix := helper.GetBucketAndPrefix(path)
-	s3Files := helper.GetS3FilesList(bucket, prefix)
+func performRotateOnS3(path string, rotationScheme *rotation.BackupRotationScheme) {
+	bucket, prefix := GetBucketAndPrefix(path)
+	s3Files := GetS3FilesList(bucket, prefix)
 
 	if s3Files.Len() == 0 {
 		log.Println("No files found to rotate")
@@ -106,7 +106,7 @@ func performRotateOnS3(path string, rotationScheme *helper.BackupRotationScheme)
 	log.Println("Deleted:")
 	for _, v := range summary.ForDelete {
 		if !rotationScheme.DryRun {
-			if err := helper.DeleteS3File(v.Bucket, v.Path); err != nil {
+			if err := DeleteS3File(v.Bucket, v.Path); err != nil {
 				log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
 				continue
 			}
@@ -115,7 +115,7 @@ func performRotateOnS3(path string, rotationScheme *helper.BackupRotationScheme)
 	}
 }
 
-func performRotateLocally(path string, rotationScheme *helper.BackupRotationScheme) {
+func performRotateLocally(path string, rotationScheme *rotation.BackupRotationScheme) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		log.Println("directory does not exist")
@@ -123,7 +123,7 @@ func performRotateLocally(path string, rotationScheme *helper.BackupRotationSche
 		return
 	}
 
-	files, err := helper.ListDir(path)
+	files, err := ListDir(path)
 	if err != nil {
 		log.Println("Error on listing directory ", err.Error())
 		os.Exit(1)
@@ -172,7 +172,7 @@ func performRotateLocally(path string, rotationScheme *helper.BackupRotationSche
 	log.Println("Deleted:")
 	for _, v := range summary.ForDelete {
 		if !rotationScheme.DryRun {
-			if err := helper.DeleteLocalFile(v.Path); err != nil {
+			if err := DeleteLocalFile(v.Path); err != nil {
 				log.Println("Error on delete local file: ", v.Path, err)
 				continue
 			}

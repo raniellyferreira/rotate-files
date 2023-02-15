@@ -4,5 +4,6 @@
 /*.sh
 .vscode/
 _dist/
+bin/
 Dockerfile
 

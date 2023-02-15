@@ -30,17 +30,17 @@ SHELL      = /usr/bin/env bash
 
 GIT_COMMIT = $(shell git rev-parse HEAD)
 GIT_SHA    = $(shell git rev-parse --short HEAD)
-GIT_TAG    = $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
+GIT_TAG    = $(shell git describe --tags --abbrev=0 --exact-match | sed 's/^v//' 2>/dev/null)
 GIT_DIRTY  = $(shell test -n "`git status --porcelain`" && echo "dirty" || echo "clean")
 
 ifdef VERSION
-	BINARY_VERSION = $(VERSION)
+	BINARY_VERSION = $(shell echo ${VERSION} | sed 's/^v//')
 endif
 BINARY_VERSION ?= ${GIT_TAG}
 
 # Only set Version if building a tag or VERSION is set
 ifneq ($(BINARY_VERSION),)
-	LDFLAGS += -X awesomeapi/rotate/v1/version.version=${BINARY_VERSION}
+	LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.version=${BINARY_VERSION}
 endif
 
 VERSION_METADATA = unreleased
@@ -49,6 +49,9 @@ ifneq ($(GIT_TAG),)
 	VERSION_METADATA =
 endif
 
+LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.metadata=${VERSION_METADATA}
+LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.gitCommit=${GIT_COMMIT}
+LDFLAGS += -X github.com/raniellyferreira/rotate-files/v1/internal/version.gitTreeState=${GIT_DIRTY}
 LDFLAGS += $(EXT_LDFLAGS)
 
 .PHONY: all
@@ -61,7 +64,7 @@ all: build
 build: $(BINDIR)/$(BINNAME)
 
 $(BINDIR)/$(BINNAME): $(SRC)
-	GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) go build $(GOFLAGS) -trimpath -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o '$(BINDIR)'/$(BINNAME) ./src
+	GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) go build $(GOFLAGS) -trimpath -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o '$(BINDIR)'/$(BINNAME) ./cmd/rotate
 
 # ------------------------------------------------------------------------------
 #  install
@@ -106,12 +109,12 @@ coverage:
 
 .PHONY: format
 format: $(GOIMPORTS)
-	GO111MODULE=on go list -f '{{.Dir}}' ./... | xargs $(GOIMPORTS) -w -local awesomeapi.com.br/rotate
+	GO111MODULE=on go list -f '{{.Dir}}' ./... | xargs $(GOIMPORTS) -w -local github.com/raniellyferreira/rotate-files/v1
 
 # Generate golden files used in unit tests
 .PHONY: gen-test-golden
 gen-test-golden:
-gen-test-golden: PKG = ./src ./pkg/action
+gen-test-golden: PKG = ./cmd/rotate ./pkg/rotation
 gen-test-golden: TESTFLAGS = -update
 gen-test-golden: test-unit
 
@@ -134,7 +137,7 @@ $(GOIMPORTS):
 .PHONY: build-cross
 build-cross: LDFLAGS += -extldflags "-static"
 build-cross: $(GOX)
-	GOFLAGS="-trimpath" GO111MODULE=on CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./src
+	GOFLAGS="-trimpath" GO111MODULE=on CGO_ENABLED=0 $(GOX) -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' ./cmd/rotate
 
 .PHONY: dist
 dist:

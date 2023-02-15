@@ -1,4 +1,4 @@
-module rotate
+module github.com/raniellyferreira/rotate-files/v1
 
 go 1.19
 
