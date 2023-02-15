@@ -34,7 +34,7 @@ Flags:
    -h, --help                    displays usage information of the application or a command (default: false)
    -h, --hourly                  number of hourly backups to preserve (default: 24)
    -m, --monthly                 number of monthly backups to preserve (default: 12)
-   -v, --version                 displays version number (default: false)
+   -v, --version                 displays version number
    -w, --weekly                  number of weekly backups to preserve (default: 14)
-   -y, --yearly                  number of yearly backups to preserve, set -1 to preserver always (default: -1)
+   -y, --yearly                  number of yearly backups to preserve, set 0 to preserver always (default: 0)
 ```
