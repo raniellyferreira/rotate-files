@@ -93,7 +93,7 @@ test-unit:
 test-coverage:
 	@echo
 	@echo "==> Running unit tests with coverage <=="
-	@ ./environment/scripts/coverage.sh
+	@environment/scripts/coverage.sh
 
 .PHONY: test-style
 test-style:
