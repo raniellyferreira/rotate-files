@@ -1,6 +1,6 @@
 # Rotate Files
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/raniellyferreira/rotate-files)](https://goreportcard.com/report/github.com/raniellyferreira/rotate-files) [![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/github.com/raniellyferreira/rotate-files)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raniellyferreira/rotate-files)](https://goreportcard.com/report/github.com/raniellyferreira/rotate-files) ![License](https://img.shields.io/github/license/raniellyferreira/rotate-files)
 
 Rotate files locally or in S3 bucket based on custom backup rotation scheme
 
