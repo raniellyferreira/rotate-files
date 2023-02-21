@@ -3,7 +3,7 @@ module github.com/raniellyferreira/rotate-files
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.3.3
+	github.com/aws/aws-sdk-go-v2 v1.17.5
 	github.com/aws/aws-sdk-go-v2/config v1.1.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.5.0
 	github.com/golang-module/carbon v1.7.3
@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.30 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gobuffalo/envy v1.7.0 // indirect
 	github.com/gobuffalo/packd v0.3.0 // indirect
@@ -29,7 +30,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.2.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.1.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.3.0 // indirect
-	github.com/aws/smithy-go v1.3.1 // indirect
+	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/stretchr/testify v1.8.1
 	github.com/thatisuday/clapper v1.0.10 // indirect
 )
