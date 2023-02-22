@@ -7,7 +7,7 @@ Rotate files locally or in S3 bucket based on custom backup rotation scheme
 ## Installation
 
 ```bash
-curl -SsL https://raw.githubusercontent.com/raniellyferreira/rotate-files/master/environment/scripts/get | sh
+curl -SsL https://raw.githubusercontent.com/raniellyferreira/rotate-files/master/environment/scripts/get | bash
 ```
 
 ## Usage
