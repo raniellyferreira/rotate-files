@@ -156,62 +156,36 @@ func (b BackupFiles) Rotate(rotationScheme *BackupRotationScheme) BackupSummary 
 }
 
 func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date carbon.Carbon) BackupSummary {
-
-	// Define os limites de backups a serem mantidos em cada grupo
-	hourlyLimit := rotationScheme.Hourly
-	dailyLimit := rotationScheme.Daily
-	weeklyLimit := rotationScheme.Weekly
-	monthlyLimit := rotationScheme.Monthly
-	yearlyLimit := rotationScheme.Yearly
-
 	var hourly, daily, weekly, monthly, yearly, forDelete BackupFiles
 	var prevHourly, prevDaily, prevWeekly, prevMonthly, prevYearly Backup
 
 	sort.Sort(backups)
 
 	for _, backup := range backups {
+		switch {
+		case backup.IsHourlyOf(date) && !backup.IsSameHour(prevHourly) && len(hourly) < rotationScheme.Hourly:
+			hourly = append(hourly, backup)
+			prevHourly = backup
 
-		if backup.IsHourlyOf(date) && !backup.IsSameHour(prevHourly) {
-			if len(hourly) < hourlyLimit {
-				hourly = append(hourly, backup)
-				prevHourly = backup
-				continue
-			}
+		case backup.IsDailyOf(date) && !backup.IsSameDay(prevDaily) && len(daily) < rotationScheme.Daily:
+			daily = append(daily, backup)
+			prevDaily = backup
+
+		case backup.IsWeeklyOf(date, int64(rotationScheme.Weekly)) && !backup.IsSameWeek(prevWeekly) && len(weekly) < rotationScheme.Weekly:
+			weekly = append(weekly, backup)
+			prevWeekly = backup
+
+		case backup.IsMonthlyOf(date) && !backup.IsSameMonth(prevMonthly) && len(monthly) < rotationScheme.Monthly:
+			monthly = append(monthly, backup)
+			prevMonthly = backup
+
+		case backup.IsYearlyOf(date) && !backup.IsSameYear(prevYearly) && (rotationScheme.Yearly < 1 || len(yearly) < rotationScheme.Yearly):
+			yearly = append(yearly, backup)
+			prevYearly = backup
+
+		default:
+			forDelete = append(forDelete, backup)
 		}
-
-		if backup.IsDailyOf(date) && !backup.IsSameDay(prevDaily) {
-			if len(daily) < dailyLimit {
-				daily = append(daily, backup)
-				prevDaily = backup
-				continue
-			}
-		}
-
-		if backup.IsWeeklyOf(date, int64(weeklyLimit)) && !backup.IsSameWeek(prevWeekly) {
-			if len(weekly) < weeklyLimit {
-				weekly = append(weekly, backup)
-				prevWeekly = backup
-				continue
-			}
-		}
-
-		if backup.IsMonthlyOf(date) && !backup.IsSameMonth(prevMonthly) {
-			if len(monthly) < monthlyLimit {
-				monthly = append(monthly, backup)
-				prevMonthly = backup
-				continue
-			}
-		}
-
-		if backup.IsYearlyOf(date) && !backup.IsSameYear(prevYearly) {
-			if yearlyLimit < 1 || len(yearly) < yearlyLimit {
-				yearly = append(yearly, backup)
-				prevYearly = backup
-				continue
-			}
-		}
-
-		forDelete = append(forDelete, backup)
 	}
 
 	return BackupSummary{
