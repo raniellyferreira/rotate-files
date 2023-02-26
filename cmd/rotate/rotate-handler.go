@@ -78,41 +78,17 @@ func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme)
 
 	summary := s3Files.Rotate(rotationScheme)
 
-	log.Println("Yearly matched:")
-	for _, v := range summary.Yearly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Monthly matched:")
-	for _, v := range summary.Monthly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Weekly matched:")
-	for _, v := range summary.Weekly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Daily matched:")
-	for _, v := range summary.Daily {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Hourly matched:")
-	for _, v := range summary.Hourly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Deleted:")
-	for _, v := range summary.ForDelete {
-		if !rotationScheme.DryRun {
-			if err := DeleteS3File(v.Bucket, v.Path); err != nil {
-				log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
-				continue
+	if !rotationScheme.DryRun {
+		go func() {
+			for _, v := range summary.ForDelete {
+				if err := DeleteS3File(v.Bucket, v.Path); err != nil {
+					log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
+				}
 			}
-		}
-		log.Println(" ", v.Path, v.Timestamp)
+		}()
 	}
+
+	summary.Print()
 }
 
 func performRotateLocally(path string, rotationScheme *rotate.BackupRotationScheme) {
@@ -143,33 +119,6 @@ func performRotateLocally(path string, rotationScheme *rotate.BackupRotationSche
 	}
 
 	summary := files.Rotate(rotationScheme)
-
-	log.Println("Yearly matched:")
-	for _, v := range summary.Yearly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Monthly matched:")
-	for _, v := range summary.Monthly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Weekly matched:")
-	for _, v := range summary.Weekly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Daily matched:")
-	for _, v := range summary.Daily {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Hourly matched:")
-	for _, v := range summary.Hourly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Deleted:")
 	for _, v := range summary.ForDelete {
 		if !rotationScheme.DryRun {
 			if err := DeleteLocalFile(v.Path); err != nil {
@@ -177,6 +126,7 @@ func performRotateLocally(path string, rotationScheme *rotate.BackupRotationSche
 				continue
 			}
 		}
-		log.Println(" ", v.Path, v.Timestamp)
 	}
+
+	summary.Print()
 }

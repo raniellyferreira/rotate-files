@@ -18,6 +18,7 @@ package rotate
 
 import (
 	"fmt"
+	"log"
 	"sort"
 
 	"github.com/golang-module/carbon"
@@ -50,6 +51,38 @@ func (s BackupSummary) GetTotalCategorized() int {
 		len(s.ForDelete)
 }
 
+func (summary BackupSummary) Print() {
+	log.Println("Yearly matched:")
+	for _, v := range summary.Yearly {
+		log.Println(" ", v.Path, v.Timestamp)
+	}
+
+	log.Println("Monthly matched:")
+	for _, v := range summary.Monthly {
+		log.Println(" ", v.Path, v.Timestamp)
+	}
+
+	log.Println("Weekly matched:")
+	for _, v := range summary.Weekly {
+		log.Println(" ", v.Path, v.Timestamp)
+	}
+
+	log.Println("Daily matched:")
+	for _, v := range summary.Daily {
+		log.Println(" ", v.Path, v.Timestamp)
+	}
+
+	log.Println("Hourly matched:")
+	for _, v := range summary.Hourly {
+		log.Println(" ", v.Path, v.Timestamp)
+	}
+
+	log.Println("Deleted:")
+	for _, v := range summary.ForDelete {
+		log.Println(" ", v.Path, v.Timestamp)
+	}
+}
+
 type Backup struct {
 	Bucket    string
 	Path      string
@@ -69,7 +102,7 @@ func (b Backup) IsDaily() bool {
 	return b.IsDailyOf(carbon.Now())
 }
 
-func (b Backup) IsWeekly(limit int64) bool {
+func (b Backup) IsWeekly(limit int) bool {
 	return b.IsWeeklyOf(carbon.Now(), limit)
 }
 
@@ -90,8 +123,8 @@ func (b Backup) IsDailyOf(date carbon.Carbon) bool {
 	return diff >= 1 && diff <= carbon.DaysPerWeek
 }
 
-func (b Backup) IsWeeklyOf(date carbon.Carbon, limit int64) bool {
-	return b.Timestamp.DiffInWeeks(date) <= limit && b.Timestamp.IsSunday()
+func (b Backup) IsWeeklyOf(date carbon.Carbon, limit int) bool {
+	return b.Timestamp.DiffInWeeks(date) <= int64(limit) && b.Timestamp.IsSunday()
 }
 
 func (b Backup) IsMonthlyOf(date carbon.Carbon) bool {
@@ -99,7 +132,7 @@ func (b Backup) IsMonthlyOf(date carbon.Carbon) bool {
 }
 
 func (b Backup) IsYearlyOf(date carbon.Carbon) bool {
-	return int(b.Timestamp.DiffInYears(date)) >= 1 && !b.Timestamp.IsSameYear(date)
+	return (int(b.Timestamp.DiffInMonths(date)) > 6 && b.Timestamp.IsSameYear(date)) || (int(b.Timestamp.DiffInMonths(date)) >= 12 && !b.Timestamp.IsSameYear(date))
 }
 
 func (b Backup) IsSameHour(compare Backup) bool {
@@ -171,7 +204,7 @@ func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date c
 			daily = append(daily, backup)
 			prevDaily = backup
 
-		case backup.IsWeeklyOf(date, int64(rotationScheme.Weekly)) && !backup.IsSameWeek(prevWeekly) && len(weekly) < rotationScheme.Weekly:
+		case backup.IsWeeklyOf(date, rotationScheme.Weekly) && !backup.IsSameWeek(prevWeekly) && len(weekly) < rotationScheme.Weekly:
 			weekly = append(weekly, backup)
 			prevWeekly = backup
 

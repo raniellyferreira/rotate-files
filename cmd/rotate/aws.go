@@ -24,7 +24,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/golang-module/carbon"
+	"github.com/raniellyferreira/rotate-files/internal/environment"
 	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 )
 
@@ -35,7 +37,7 @@ func loadConfig() {
 		return
 	}
 
-	profile := GetEnv("AWS_PROFILE", "")
+	profile := environment.GetEnv("AWS_PROFILE", "")
 
 	var err error
 	var cfg aws.Config
@@ -61,22 +63,41 @@ func DeleteS3File(bucket, path string) error {
 	return err
 }
 
+func GetAllS3Files(bucket, prefix string) ([]types.Object, error) {
+	var continuationToken *string
+	files := make([]types.Object, 0)
+	for {
+		resp, err := ClientS3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+			Bucket:            aws.String(bucket),
+			Prefix:            aws.String(prefix),
+			MaxKeys:           1e5, //10.000
+			ContinuationToken: continuationToken,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		files = append(files, resp.Contents...)
+
+		// Verifica se houve paginação e atualiza o continuationToken
+		if !resp.IsTruncated {
+			break
+		}
+		continuationToken = resp.NextContinuationToken
+	}
+	return files, nil
+}
+
 func GetS3FilesList(bucket, prefix string) *rotate.BackupFiles {
 	loadConfig()
 
-	// TODO fazer loop para pegar todos os itens
-	result, err := ClientS3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket:  aws.String(bucket),
-		Prefix:  aws.String(prefix),
-		MaxKeys: 1e5,
-	})
-
+	result, err := GetAllS3Files(bucket, prefix)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var backups = rotate.BackupFiles{}
-	for _, obj := range result.Contents {
+	for _, obj := range result {
 		backups = append(backups, rotate.Backup{
 			Bucket:    bucket,
 			Path:      *obj.Key,
