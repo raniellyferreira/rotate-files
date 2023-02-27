@@ -70,7 +70,7 @@ func GetAllS3Files(bucket, prefix string) ([]types.Object, error) {
 		resp, err := ClientS3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 			Bucket:            aws.String(bucket),
 			Prefix:            aws.String(prefix),
-			MaxKeys:           1e5, //10.000
+			MaxKeys:           1e4, //10.000
 			ContinuationToken: continuationToken,
 		})
 		if err != nil {
