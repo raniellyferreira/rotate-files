@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/aws/aws-sdk-go-v2 v1.17.5
 	github.com/aws/aws-sdk-go-v2/config v1.18.15
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.4
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.5
 	github.com/golang-module/carbon v1.7.3
 	github.com/joho/godotenv v1.5.1
 	github.com/thatisuday/commando v1.0.4
