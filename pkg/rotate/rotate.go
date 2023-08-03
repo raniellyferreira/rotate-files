@@ -128,11 +128,11 @@ func (b Backup) IsWeeklyOf(date carbon.Carbon, limit int) bool {
 }
 
 func (b Backup) IsMonthlyOf(date carbon.Carbon) bool {
-	return int(b.Timestamp.DiffInMonths(date)) <= 13 && int(b.Timestamp.DiffInWeeks(date)) >= 4
+	return b.Timestamp.DiffInMonths(date) <= 13 && b.Timestamp.DiffInWeeks(date) >= 4
 }
 
 func (b Backup) IsYearlyOf(date carbon.Carbon) bool {
-	return (int(b.Timestamp.DiffInMonths(date)) > 6 && b.Timestamp.IsSameYear(date)) || (int(b.Timestamp.DiffInMonths(date)) >= 12 && !b.Timestamp.IsSameYear(date))
+	return (b.Timestamp.DiffInMonths(date) > 6 && !b.Timestamp.IsSameYear(date)) || b.Timestamp.DiffInMonths(date) >= 12
 }
 
 func (b Backup) IsSameHour(compare Backup) bool {
