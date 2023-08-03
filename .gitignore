@@ -6,4 +6,6 @@
 _dist/
 bin/
 Dockerfile
-
+.history
+RELEASE-NOTES*
+DEV-README*
