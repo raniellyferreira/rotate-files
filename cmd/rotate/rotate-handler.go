@@ -79,13 +79,16 @@ func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme)
 	summary := s3Files.Rotate(rotationScheme)
 
 	if !rotationScheme.DryRun {
-		go func() {
-			for _, v := range summary.ForDelete {
-				if err := DeleteS3File(v.Bucket, v.Path); err != nil {
-					log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
-				}
+		for _, v := range summary.ForDelete {
+			log.Println("Deleting file...", v.Path)
+			if err := DeleteS3File(v.Bucket, v.Path); err != nil {
+				log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
 			}
-		}()
+		}
+	} else {
+		for _, v := range summary.ForDelete {
+			log.Println("DRYRUN: simulate file delete...", v.Path)
+		}
 	}
 
 	summary.Print()
