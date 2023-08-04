@@ -78,16 +78,20 @@ func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme)
 
 	summary := s3Files.Rotate(rotationScheme)
 
-	if !rotationScheme.DryRun {
-		for _, v := range summary.ForDelete {
-			log.Println("Deleting file...", v.Path)
-			if err := DeleteS3File(v.Bucket, v.Path); err != nil {
-				log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
-			}
-		}
+	if len(summary.ForDelete) == 0 {
+		log.Println("No files eligible for deletion")
 	} else {
-		for _, v := range summary.ForDelete {
-			log.Println("DRYRUN: simulate file delete...", v.Path)
+		if !rotationScheme.DryRun {
+			for _, v := range summary.ForDelete {
+				log.Println("Deleting file...", v.Path)
+				if err := DeleteS3File(v.Bucket, v.Path); err != nil {
+					log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
+				}
+			}
+		} else {
+			for _, v := range summary.ForDelete {
+				log.Println("DRYRUN: simulate file delete...", v.Path)
+			}
 		}
 	}
 
@@ -122,11 +126,21 @@ func performRotateLocally(path string, rotationScheme *rotate.BackupRotationSche
 	}
 
 	summary := files.Rotate(rotationScheme)
-	for _, v := range summary.ForDelete {
+
+	if len(summary.ForDelete) == 0 {
+		log.Println("No files eligible for deletion")
+	} else {
 		if !rotationScheme.DryRun {
-			if err := DeleteLocalFile(v.Path); err != nil {
-				log.Println("Error on delete local file: ", v.Path, err)
-				continue
+			for _, v := range summary.ForDelete {
+				log.Println("Deleting file...", v.Path)
+				if err := DeleteLocalFile(v.Path); err != nil {
+					log.Println("Error on delete local file: ", v.Path, err)
+					continue
+				}
+			}
+		} else {
+			for _, v := range summary.ForDelete {
+				log.Println("DRYRUN: simulate file delete...", v.Path)
 			}
 		}
 	}
