@@ -40,10 +40,29 @@ func loadConfig() {
 	var err error
 	var cfg aws.Config
 
-	// Using the SDK's default configuration, loading additional config
-	// and credentials values from the environment variables, shared
-	// credentials, and shared configuration files
-	cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(environment.GetEnv("AWS_REGION", "us-east-1")))
+	region := environment.GetEnv("AWS_REGION", "us-east-1")
+	endpointOverride := environment.GetEnv("AWS_ENDPOINT_OVERRIDE", "")
+
+	if endpointOverride == "" {
+		// Using the SDK's default configuration, loading additional config
+		// and credentials values from the environment variables, shared
+		// credentials, and shared configuration files
+		cfg, err = config.LoadDefaultConfig(
+			context.TODO(),
+			config.WithRegion(region),
+		)
+	} else {
+		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				URL: endpointOverride,
+			}, nil
+		})
+		cfg, err = config.LoadDefaultConfig(
+			context.TODO(),
+			config.WithRegion(region),
+			config.WithEndpointResolverWithOptions(customResolver),
+		)
+	}
 	if err != nil {
 		log.Fatalf("failed to load aws configuration, %v", err)
 	}
