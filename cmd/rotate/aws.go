@@ -37,17 +37,13 @@ func loadConfig() {
 		return
 	}
 
-	profile := environment.GetEnv("AWS_PROFILE", "")
-
 	var err error
 	var cfg aws.Config
 
-	if profile == "" {
-		cfg, err = config.LoadDefaultConfig(context.TODO())
-	} else {
-		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(profile))
-	}
-
+	// Using the SDK's default configuration, loading additional config
+	// and credentials values from the environment variables, shared
+	// credentials, and shared configuration files
+	cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(environment.GetEnv("AWS_REGION", "us-east-1")))
 	if err != nil {
 		log.Fatalf("failed to load aws configuration, %v", err)
 	}
@@ -96,7 +92,8 @@ func GetS3FilesList(bucket, prefix string) *rotate.BackupFiles {
 		log.Fatal(err)
 	}
 
-	var backups = rotate.BackupFiles{}
+	backups := rotate.BackupFiles{}
+
 	for _, obj := range result {
 		backups = append(backups, rotate.Backup{
 			Bucket:    bucket,

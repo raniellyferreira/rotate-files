@@ -36,7 +36,7 @@ func GetFileInfo(path string) (string, time.Time, error) {
 }
 
 func ListDir(path string) (rotate.BackupFiles, error) {
-	var files rotate.BackupFiles
+	files := rotate.BackupFiles{}
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
