@@ -52,9 +52,12 @@ func loadConfig() {
 			config.WithRegion(region),
 		)
 	} else {
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, signingRegion string, options ...interface{}) (aws.Endpoint, error) {
 			return aws.Endpoint{
-				URL: endpointOverride,
+				URL:               endpointOverride,
+				HostnameImmutable: true,
+				SigningName:       service,
+				SigningRegion:     signingRegion,
 			}, nil
 		})
 		cfg, err = config.LoadDefaultConfig(
