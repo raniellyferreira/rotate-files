@@ -25,14 +25,14 @@ import (
 	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 )
 
-func GetFileInfo(path string) (string, time.Time, error) {
+func GetFileInfo(path string) (string, int64, time.Time, error) {
 	file, err := os.Stat(path)
 
 	if err != nil {
-		return "", time.Time{}, err
+		return "", 0, time.Time{}, err
 	}
 
-	return path, file.ModTime(), nil
+	return path, file.Size(), file.ModTime(), nil
 }
 
 func ListDir(path string) (rotate.BackupFiles, error) {
@@ -43,11 +43,15 @@ func ListDir(path string) (rotate.BackupFiles, error) {
 			return err
 		}
 		if !info.IsDir() {
-			file, date, err := GetFileInfo(path)
+			file, size, date, err := GetFileInfo(path)
 			if err != nil {
 				return err
 			}
-			files = append(files, rotate.Backup{Path: file, Timestamp: carbon.FromStdTime(date)})
+			files = append(files, rotate.Backup{
+				Path:      file,
+				Size:      size,
+				Timestamp: carbon.FromStdTime(date),
+			})
 		}
 		return nil
 	})

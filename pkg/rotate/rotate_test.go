@@ -167,8 +167,8 @@ func TestDeleteMonthlyBackupsEndMonth(t *testing.T) {
 	summaryBackups := backups.RotateOf(&rotationScheme, today)
 
 	assert.Equal(t, rotationScheme.Monthly, len(summaryBackups.Monthly))
-	assert.Equal(t, 1, len(summaryBackups.Yearly))
-	assert.Equal(t, 1, len(summaryBackups.ForDelete))
+	assert.Equal(t, 2, len(summaryBackups.Yearly))
+	assert.Equal(t, 0, len(summaryBackups.ForDelete))
 	assert.Equal(t, backups.Len(), summaryBackups.GetTotalCategorized())
 }
 

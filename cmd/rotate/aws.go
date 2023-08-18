@@ -120,6 +120,7 @@ func GetS3FilesList(bucket, prefix string) *rotate.BackupFiles {
 		backups = append(backups, rotate.Backup{
 			Bucket:    bucket,
 			Path:      *obj.Key,
+			Size:      obj.Size,
 			Timestamp: carbon.FromStdTime(*obj.LastModified),
 		})
 	}

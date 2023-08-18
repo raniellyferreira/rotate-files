@@ -34,60 +34,73 @@ type BackupRotationScheme struct {
 }
 
 type BackupSummary struct {
-	Hourly    []Backup
-	Daily     []Backup
-	Weekly    []Backup
-	Monthly   []Backup
-	Yearly    []Backup
-	ForDelete []Backup
+	Hourly             []Backup
+	Daily              []Backup
+	Weekly             []Backup
+	Monthly            []Backup
+	Yearly             []Backup
+	ForDelete          []Backup
+	SizeTotalHourly    int64
+	SizeTotalDaily     int64
+	SizeTotalWeekly    int64
+	SizeTotalMonthly   int64
+	SizeTotalYearly    int64
+	SizeTotalForDelete int64
 }
 
 func (s BackupSummary) GetTotalCategorized() int {
-	return len(s.Hourly) +
-		len(s.Daily) +
-		len(s.Weekly) +
-		len(s.Monthly) +
-		len(s.Yearly) +
-		len(s.ForDelete)
+	total := 0
+	total += len(s.Hourly)
+	total += len(s.Daily)
+	total += len(s.Weekly)
+	total += len(s.Monthly)
+	total += len(s.Yearly)
+	total += len(s.ForDelete)
+	return total
 }
 
 func (summary BackupSummary) Print() {
-	log.Println("Yearly matched:")
-	for _, v := range summary.Yearly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
+	log.Println("")
+	summary.printBackups("Yearly", summary.Yearly, summary.SizeTotalYearly)
+	summary.printBackups("Monthly", summary.Monthly, summary.SizeTotalMonthly)
+	summary.printBackups("Weekly", summary.Weekly, summary.SizeTotalWeekly)
+	summary.printBackups("Daily", summary.Daily, summary.SizeTotalDaily)
+	summary.printBackups("Hourly", summary.Hourly, summary.SizeTotalHourly)
+	summary.printBackups("Delete", summary.ForDelete, summary.SizeTotalForDelete)
+}
 
-	log.Println("Monthly matched:")
-	for _, v := range summary.Monthly {
-		log.Println(" ", v.Path, v.Timestamp)
+func (summary BackupSummary) printBackups(category string, backups []Backup, sizeTotal int64) {
+	formattedSize := summary.formatSize(sizeTotal)
+	log.Printf("%s matched [%d]:", category, len(backups))
+	if len(backups) == 0 {
+		log.Println("  No files")
+	} else {
+		for _, v := range backups {
+			log.Println(" ", v.Path, summary.formatSize(v.Size), v.Timestamp)
+		}
+		log.Printf("  Total Size: %s", formattedSize)
 	}
+	log.Println("")
+}
 
-	log.Println("Weekly matched:")
-	for _, v := range summary.Weekly {
-		log.Println(" ", v.Path, v.Timestamp)
+func (summary BackupSummary) formatSize(size int64) string {
+	const unit = 1024
+	if size < unit {
+		return fmt.Sprintf("%d B", size)
 	}
-
-	log.Println("Daily matched:")
-	for _, v := range summary.Daily {
-		log.Println(" ", v.Path, v.Timestamp)
+	div, exp := int64(unit), 0
+	for n := size / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
 	}
-
-	log.Println("Hourly matched:")
-	for _, v := range summary.Hourly {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
-
-	log.Println("Deleted:")
-	for _, v := range summary.ForDelete {
-		log.Println(" ", v.Path, v.Timestamp)
-	}
+	return fmt.Sprintf("%.1f%cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
 type Backup struct {
 	Bucket    string
 	Path      string
+	Size      int64
 	Timestamp carbon.Carbon
-	DeleteMe  bool
 }
 
 func (b Backup) String() string {
@@ -191,6 +204,7 @@ func (b BackupFiles) Rotate(rotationScheme *BackupRotationScheme) BackupSummary 
 func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date carbon.Carbon) BackupSummary {
 	var hourly, daily, weekly, monthly, yearly, forDelete BackupFiles
 	var prevHourly, prevDaily, prevWeekly, prevMonthly, prevYearly Backup
+	var totalSizeHourly, totalSizeDaily, totalSizeWeekly, totalSizeMonthly, totalSizeYearly, totalSizeForDelete int64
 
 	sort.Sort(backups)
 
@@ -198,26 +212,32 @@ func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date c
 		switch {
 		case backup.IsHourlyOf(date) && !backup.IsSameHour(prevHourly) && len(hourly) < rotationScheme.Hourly:
 			hourly = append(hourly, backup)
+			totalSizeHourly += backup.Size
 			prevHourly = backup
 
 		case backup.IsDailyOf(date) && !backup.IsSameDay(prevDaily) && len(daily) < rotationScheme.Daily:
 			daily = append(daily, backup)
+			totalSizeDaily += backup.Size
 			prevDaily = backup
 
 		case backup.IsWeeklyOf(date, rotationScheme.Weekly) && !backup.IsSameWeek(prevWeekly) && len(weekly) < rotationScheme.Weekly:
 			weekly = append(weekly, backup)
+			totalSizeWeekly += backup.Size
 			prevWeekly = backup
 
 		case backup.IsMonthlyOf(date) && !backup.IsSameMonth(prevMonthly) && len(monthly) < rotationScheme.Monthly:
 			monthly = append(monthly, backup)
+			totalSizeMonthly += backup.Size
 			prevMonthly = backup
 
 		case backup.IsYearlyOf(date) && !backup.IsSameYear(prevYearly) && (rotationScheme.Yearly < 1 || len(yearly) < rotationScheme.Yearly):
 			yearly = append(yearly, backup)
+			totalSizeYearly += backup.Size
 			prevYearly = backup
 
 		default:
 			forDelete = append(forDelete, backup)
+			totalSizeForDelete += backup.Size
 		}
 	}
 
@@ -228,5 +248,12 @@ func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date c
 		Monthly:   monthly,
 		Yearly:    yearly,
 		ForDelete: forDelete,
+
+		SizeTotalHourly:    totalSizeHourly,
+		SizeTotalDaily:     totalSizeDaily,
+		SizeTotalWeekly:    totalSizeWeekly,
+		SizeTotalMonthly:   totalSizeMonthly,
+		SizeTotalYearly:    totalSizeYearly,
+		SizeTotalForDelete: totalSizeDaily,
 	}
 }
