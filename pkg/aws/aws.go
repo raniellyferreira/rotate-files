@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package aws
 
 import (
 	"context"
 	"log"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -126,13 +125,4 @@ func GetS3FilesList(bucket, prefix string) *rotate.BackupFiles {
 	}
 
 	return &backups
-}
-
-func GetBucketAndPrefix(fullPath string) (string, string) {
-	path := strings.SplitN(strings.TrimPrefix(fullPath, "s3://"), "/", 2)
-	prefix := ""
-	if len(path) > 1 && strings.TrimSpace(path[1]) != "" {
-		prefix = path[1]
-	}
-	return path[0], prefix
 }

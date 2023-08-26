@@ -23,6 +23,8 @@ import (
 
 	"github.com/thatisuday/commando"
 
+	"github.com/raniellyferreira/rotate-files/pkg/aws"
+	"github.com/raniellyferreira/rotate-files/pkg/files"
 	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 )
 
@@ -61,8 +63,8 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 }
 
 func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme) {
-	bucket, prefix := GetBucketAndPrefix(path)
-	s3Files := GetS3FilesList(bucket, prefix)
+	bucket, prefix := rotate.GetBucketAndPrefix(path)
+	s3Files := aws.GetS3FilesList(bucket, prefix)
 
 	if s3Files.Len() == 0 {
 		log.Println("No files found to rotate")
@@ -84,7 +86,7 @@ func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme)
 		if !rotationScheme.DryRun {
 			for _, v := range summary.ForDelete {
 				log.Println("Deleting file...", v.Path)
-				if err := DeleteS3File(v.Bucket, v.Path); err != nil {
+				if err := aws.DeleteS3File(v.Bucket, v.Path); err != nil {
 					log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
 				}
 			}
@@ -106,26 +108,26 @@ func performRotateLocally(path string, rotationScheme *rotate.BackupRotationSche
 		return
 	}
 
-	files, err := ListDir(path)
+	filesList, err := files.ListDir(path)
 	if err != nil {
 		log.Println("Error on listing directory ", err.Error())
 		os.Exit(1)
 		return
 	}
 
-	if files.Len() == 0 {
+	if filesList.Len() == 0 {
 		log.Println("No files found to rotate")
 		os.Exit(0)
 		return
 	}
 
-	if files.Len() == 1 {
+	if filesList.Len() == 1 {
 		log.Println("One file is not eligible for rotate")
 		os.Exit(0)
 		return
 	}
 
-	summary := files.Rotate(rotationScheme)
+	summary := filesList.Rotate(rotationScheme)
 
 	if len(summary.ForDelete) == 0 {
 		log.Println("No files eligible for deletion")
@@ -133,7 +135,7 @@ func performRotateLocally(path string, rotationScheme *rotate.BackupRotationSche
 		if !rotationScheme.DryRun {
 			for _, v := range summary.ForDelete {
 				log.Println("Deleting file...", v.Path)
-				if err := DeleteLocalFile(v.Path); err != nil {
+				if err := files.DeleteLocalFile(v.Path); err != nil {
 					log.Println("Error on delete local file: ", v.Path, err)
 					continue
 				}

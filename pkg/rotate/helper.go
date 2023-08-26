@@ -14,4 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main_test
+package rotate
+
+import "strings"
+
+func GetBucketAndPrefix(fullPath string) (string, string) {
+	parts := strings.SplitN(fullPath, "://", 2)
+	if len(parts) < 2 {
+		return "", ""
+	}
+	pathParts := strings.SplitN(parts[1], "/", 2)
+	bucket := pathParts[0]
+	prefix := ""
+	if len(pathParts) > 1 && strings.TrimSpace(pathParts[1]) != "" {
+		prefix = pathParts[1]
+	}
+	return bucket, prefix
+}
