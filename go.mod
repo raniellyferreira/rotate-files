@@ -3,7 +3,7 @@ module github.com/raniellyferreira/rotate-files
 go 1.20
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.21.1
+	github.com/aws/aws-sdk-go-v2 v1.21.2
 	github.com/aws/aws-sdk-go-v2/config v1.18.40
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.40.1
 	github.com/golang-module/carbon v1.7.3
