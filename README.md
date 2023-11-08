@@ -2,91 +2,107 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/raniellyferreira/rotate-files)](https://goreportcard.com/report/github.com/raniellyferreira/rotate-files) ![License](https://img.shields.io/github/license/raniellyferreira/rotate-files)
 
-Rotate files locally or in S3 bucket based on custom backup rotation scheme
+## Description
+
+Rotate Files is a project that allows you to rotate files locally or in a compatible third-party storage with S3 API, such as Amazon S3, MinIO, DigitalOcean Spaces, Wasabi, Backblaze B2, Azure Blob Storage, and Google Cloud Storage, based on a custom backup rotation scheme.
+
+## Requirements
+
+To run this project, you need to have the following installed:
+
+- bash
+- curl
+- openssl
 
 ## Installation
+
+To install Rotate Files, run the following command in the terminal:
 
 ```bash
 curl -SsL https://raw.githubusercontent.com/raniellyferreira/rotate-files/master/environment/scripts/get | bash
 ```
 
+## Configuration
+
+You can configure Rotate Files using the following options:
+
+- `-d, --daily`: number of daily backups to preserve (default: 7)
+- `-D, --dry-run`: simulate deletion process (default: false)
+- `-h, --help`: displays usage information of the application or a command
+- `-h, --hourly`: number of hourly backups to preserve (default: 24)
+- `-m, --monthly`: number of monthly backups to preserve (default: 12)
+- `-v, --version`: displays version number
+- `-w, --weekly`: number of weekly backups to preserve (default: 14)
+- `-y, --yearly`: number of yearly backups to preserve, set 0 to preserver always (default: 0)
+
+## Environment Vars
+
+### Amazon S3
+
+- `AWS_ACCESS_KEY_ID`: The access key ID for your AWS account.
+- `AWS_SECRET_ACCESS_KEY`: The secret access key for your AWS account.
+- `AWS_REGION`: The AWS region where your S3 bucket is located.
+- `AWS_ENDPOINT_OVERRIDE`: The endpoint override for your third-party storage with S3 API based.
+
+Supported third-party storage providers:
+
+- Amazon S3
+- CloudFlare R2
+- MinIO
+- DigitalOcean Spaces
+- Wasabi
+- Backblaze B2
+- and more...
+
+### Google Cloud Storage
+
+- `GOOGLE_APPLICATION_CREDENTIALS`: The path to your Google Cloud service account key file.
+
+### Azure Blob Storage
+
+- `AZURE_STORAGE_CONNECTION_STRING`: The connection string for your Azure storage account.
+- `AZURE_CLIENT_ID`: The client ID for your Azure AD application.
+- `AZURE_CLIENT_SECRET`: The client secret for your Azure AD application.
+- `AZURE_TENANT_ID`: The tenant ID for your Azure AD application.
+- `AZURE_SUBSCRIPTION_ID`: The subscription ID for your Azure account.
+
+**Note: If the `AZURE_STORAGE_CONNECTION_STRING` environment variable is set, all other variables related to Azure Blob Storage will be ignored.**
+
 ## Usage
+
+To use Rotate Files, run the following command in the terminal:
 
 ```bash
 rotate help
 ```
 
-```console
-Rotate files locally or in S3 bucket based on backup rotation scheme
+This will display information about how to use the application and its commands.
 
-Usage:
-   rotate <path> {flags}
-   rotate <command> {flags}
+## Examples
 
-Commands: 
-   help                          displays usage informationn
-   version                       displays version number
-
-Arguments: 
-   path                          local directory path or s3:// path
-
-Flags: 
-   -d, --daily                   number of daily backups to preserve (default: 7)
-   -D, --dry-run                 simulate deletion process (default: false)
-   -h, --help                    displays usage information of the application or a command
-   -h, --hourly                  number of hourly backups to preserve (default: 24)
-   -m, --monthly                 number of monthly backups to preserve (default: 12)
-   -v, --version                 displays version number
-   -w, --weekly                  number of weekly backups to preserve (default: 14)
-   -y, --yearly                  number of yearly backups to preserve, set 0 to preserver always (default: 0)
-```
-
-### Use example
+Here is an example of how to use Rotate Files:
 
 ```bash
+# Amazon S3
 rotate s3://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
+
+# Google Cloud Storage
+go run ./cmd/rotate gcs://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
+
+# Azure Blob Storage
+go run ./cmd/rotate blob://example-storage-account-name/example-container/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 ```
 
-rotate output:
+This command will rotate the files in the specified S3 bucket, preserving 24 hourly backups, 7 daily backups, 10 weekly backups, and 12 monthly backups.
 
-```console
-2023/02/15 13:28:07 Starting rotation on s3://example-bucket/backups
-2023/02/15 13:28:07 Yearly matched:
-2023/02/15 13:28:07   backups/mysql-2021-03-03-0607.tar.gz 2021-03-03 09:09:34
-2023/02/15 13:28:07 Monthly matched:
-2023/02/15 13:28:07   backups/mysql-2023-01-16-0201.tar.gz 2023-01-16 05:40:08
-2023/02/15 13:28:07   backups/mysql-2022-12-19-0201.tar.gz 2022-12-19 05:40:56
-2023/02/15 13:28:07   backups/mysql-2022-11-01-0201.tar.gz 2022-11-01 05:36:10
-2023/02/15 13:28:07   backups/mysql-2022-10-01-0201.tar.gz 2022-10-01 05:32:32
-2023/02/15 13:28:07   backups/mysql-2022-09-25-0245.tar.gz 2022-09-25 06:11:53
-2023/02/15 13:28:07   backups/mysql-2022-08-01-0201.tar.gz 2022-08-01 05:15:59
-2023/02/15 13:28:07   backups/mysql-2022-07-01-0201.tar.gz 2022-07-01 05:16:58
-2023/02/15 13:28:07   backups/mysql-2022-06-01-0201.tar.gz 2022-06-01 05:16:04
-2023/02/15 13:28:07   backups/mysql-2022-05-01-0201.tar.gz 2022-05-01 05:16:06
-2023/02/15 13:28:07   backups/mysql-2022-04-01-0201.tar.gz 2022-04-01 05:11:35
-2023/02/15 13:28:07   backups/mysql-2022-03-01-0201.tar.gz 2022-03-01 05:15:01
-2023/02/15 13:28:07   backups/mysql-2022-01-01-0201.tar.gz 2022-01-01 05:37:37
-2023/02/15 13:28:07 Weekly matched:
-2023/02/15 13:28:07   backups/mysql-2023-01-01-0201.tar.gz 2023-01-01 05:37:16
-2023/02/15 13:28:07 Daily matched:
-2023/02/15 13:28:07   backups/mysql-2023-02-14-0201.tar.gz 2023-02-14 05:42:08
-2023/02/15 13:28:07   backups/mysql-2023-02-13-0201.tar.gz 2023-02-13 05:41:46
-2023/02/15 13:28:07   backups/mysql-2023-02-12-0201.tar.gz 2023-02-12 05:40:40
-2023/02/15 13:28:07   backups/mysql-2023-02-11-0201.tar.gz 2023-02-11 05:40:28
-2023/02/15 13:28:07   backups/mysql-2023-02-10-0201.tar.gz 2023-02-10 05:46:37
-2023/02/15 13:28:07   backups/mysql-2023-02-09-0201.tar.gz 2023-02-09 05:46:39
-2023/02/15 13:28:07   backups/mysql-2023-02-08-0201.tar.gz 2023-02-08 05:48:30
-2023/02/15 13:28:07 Hourly matched:
-2023/02/15 13:28:07   backups/mysql-2023-02-15-1245.tar.gz 2023-02-15 16:27:01
-2023/02/15 13:28:07   backups/mysql-2023-02-15-1126.tar.gz 2023-02-15 15:09:08
-2023/02/15 13:28:07   backups/mysql-2023-02-15-1043.tar.gz 2023-02-15 14:25:47
-2023/02/15 13:28:07 Deleted:
-2023/02/15 13:28:08   backups/mysql-2023-02-06-0201.tar.gz 2023-02-06 05:45:07
-2023/02/15 13:28:08   backups/mysql-2023-02-01-0201.tar.gz 2023-02-01 05:40:06
-2023/02/15 13:28:09   backups/mysql-2023-01-30-0201.tar.gz 2023-01-30 05:39:51
-2023/02/15 13:28:09   backups/mysql-2023-01-23-0201.tar.gz 2023-01-23 05:40:46
-2023/02/15 13:28:09   backups/mysql-2023-01-09-0201.tar.gz 2023-01-09 05:38:39
-2023/02/15 13:28:09   backups/mysql-2023-01-02-0201.tar.gz 2023-01-02 05:37:57
-2023/02/15 13:28:09   backups/mysql-2022-12-12-0201.tar.gz 2022-12-12 05:40:55
-2023/02/15 13:28:09   backups/mysql-2022-12-01-0201.tar.gz 2022-12-01 05:39:11
-```
+## Contribution
+
+If you want to contribute to this project, feel free to submit issues, request features, or submit pull requests.
+
+## License
+
+This project is licensed under the [Apache-2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
+
+## Support
+
+If you have any questions or need help with this project, please contact us at contato@awesomeapi.com.br
