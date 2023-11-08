@@ -24,7 +24,9 @@ import (
 	"github.com/thatisuday/commando"
 
 	"github.com/raniellyferreira/rotate-files/pkg/aws"
+	"github.com/raniellyferreira/rotate-files/pkg/azure"
 	"github.com/raniellyferreira/rotate-files/pkg/files"
+	"github.com/raniellyferreira/rotate-files/pkg/google"
 	"github.com/raniellyferreira/rotate-files/pkg/rotate"
 )
 
@@ -54,50 +56,22 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 		log.Println(" -------- DryRun mode on")
 	}
 
-	if isS3BucketPath := strings.HasPrefix(path, "s3://"); isS3BucketPath {
+	switch {
+	case
+		strings.HasPrefix(path, "s3://"):
 		performRotateOnS3(path, rotationScheme)
-		return
+	case
+		strings.HasPrefix(path, "gc://"),
+		strings.HasPrefix(path, "gs://"),
+		strings.HasPrefix(path, "gcs://"):
+		performRotateOnGCS(path, rotationScheme)
+	case
+		strings.HasPrefix(path, "blob://"),
+		strings.HasPrefix(path, "azure://"):
+		performRotateOnAzureBlobStorage(path, rotationScheme)
+	default:
+		performRotateLocally(path, rotationScheme)
 	}
-
-	performRotateLocally(path, rotationScheme)
-}
-
-func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme) {
-	bucket, prefix := rotate.GetBucketAndPrefix(path)
-	s3Files := aws.GetS3FilesList(bucket, prefix)
-
-	if s3Files.Len() == 0 {
-		log.Println("No files found to rotate")
-		os.Exit(0)
-		return
-	}
-
-	if s3Files.Len() == 1 {
-		log.Println("One file is not eligible for rotate")
-		os.Exit(0)
-		return
-	}
-
-	summary := s3Files.Rotate(rotationScheme)
-
-	if len(summary.ForDelete) == 0 {
-		log.Println("No files eligible for deletion")
-	} else {
-		if !rotationScheme.DryRun {
-			for _, v := range summary.ForDelete {
-				log.Println("Deleting file...", v.Path)
-				if err := aws.DeleteS3File(v.Bucket, v.Path); err != nil {
-					log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
-				}
-			}
-		} else {
-			for _, v := range summary.ForDelete {
-				log.Println("DRYRUN: simulate file delete...", v.Path)
-			}
-		}
-	}
-
-	summary.Print()
 }
 
 func performRotateLocally(path string, rotationScheme *rotate.BackupRotationScheme) {
@@ -138,6 +112,129 @@ func performRotateLocally(path string, rotationScheme *rotate.BackupRotationSche
 				if err := files.DeleteLocalFile(v.Path); err != nil {
 					log.Println("Error on delete local file: ", v.Path, err)
 					continue
+				}
+			}
+		} else {
+			for _, v := range summary.ForDelete {
+				log.Println("DRYRUN: simulate file delete...", v.Path)
+			}
+		}
+	}
+
+	summary.Print()
+}
+
+func performRotateOnS3(path string, rotationScheme *rotate.BackupRotationScheme) {
+	bucket, prefix := rotate.GetBucketAndPrefix(path)
+	s3Files := aws.GetS3FilesList(bucket, prefix)
+
+	if s3Files.Len() == 0 {
+		log.Println("No files found to rotate")
+		os.Exit(0)
+		return
+	}
+
+	if s3Files.Len() == 1 {
+		log.Println("One file is not eligible for rotate")
+		os.Exit(0)
+		return
+	}
+
+	summary := s3Files.Rotate(rotationScheme)
+
+	if len(summary.ForDelete) == 0 {
+		log.Println("No files eligible for deletion")
+	} else {
+		if !rotationScheme.DryRun {
+			for _, v := range summary.ForDelete {
+				log.Println("Deleting file...", v.Path)
+				if err := aws.DeleteS3File(v.Bucket, v.Path); err != nil {
+					log.Println("Error on delete object from S3: ", v.Bucket, v.Path, err)
+				}
+			}
+		} else {
+			for _, v := range summary.ForDelete {
+				log.Println("DRYRUN: simulate file delete...", v.Path)
+			}
+		}
+	}
+
+	summary.Print()
+}
+
+func performRotateOnGCS(path string, rotationScheme *rotate.BackupRotationScheme) {
+	bucket, prefix := rotate.GetBucketAndPrefix(path)
+	gcsFiles := google.GetGCSFilesList(bucket, prefix)
+
+	if gcsFiles.Len() == 0 {
+		log.Println("No files found to rotate")
+		os.Exit(0)
+		return
+	}
+
+	if gcsFiles.Len() == 1 {
+		log.Println("One file is not eligible for rotate")
+		os.Exit(0)
+		return
+	}
+
+	summary := gcsFiles.Rotate(rotationScheme)
+
+	if len(summary.ForDelete) == 0 {
+		log.Println("No files eligible for deletion")
+	} else {
+		if !rotationScheme.DryRun {
+			for _, v := range summary.ForDelete {
+				log.Println("Deleting file...", v.Path)
+				err := google.DeleteGCSFile(v.Bucket, v.Path)
+				if err != nil {
+					log.Println("Error on delete object from GCS: ", v.Bucket, v.Path, err)
+				}
+			}
+		} else {
+			for _, v := range summary.ForDelete {
+				log.Println("DRYRUN: simulate file delete...", v.Path)
+			}
+		}
+	}
+
+	summary.Print()
+}
+
+func performRotateOnAzureBlobStorage(path string, rotationScheme *rotate.BackupRotationScheme) {
+	accountName, containerName, containerPath := azure.GetAccountContainerAndPath(path)
+	if accountName == "" || containerName == "" {
+		log.Fatal("Error: You must specify the storage account and container. Example: blob://storage-account-name/container-name")
+	}
+
+	files, err := azure.GetAllFiles(accountName, containerName, containerPath)
+	if err != nil {
+		log.Fatalf("error on get files from blob storage: %v", err)
+	}
+
+	if files.Len() == 0 {
+		log.Println("No files found to rotate")
+		os.Exit(0)
+		return
+	}
+
+	if files.Len() == 1 {
+		log.Println("One file is not eligible for rotate")
+		os.Exit(0)
+		return
+	}
+
+	summary := files.Rotate(rotationScheme)
+
+	if len(summary.ForDelete) == 0 {
+		log.Println("No files eligible for deletion")
+	} else {
+		if !rotationScheme.DryRun {
+			for _, v := range summary.ForDelete {
+				log.Println("Deleting file...", v.Path)
+				err := azure.DeleteFile(&v)
+				if err != nil {
+					log.Println("Error on delete object from blob storage: ", v.Bucket, v.Path, err)
 				}
 			}
 		} else {

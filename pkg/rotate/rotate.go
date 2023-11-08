@@ -254,6 +254,6 @@ func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date c
 		SizeTotalWeekly:    totalSizeWeekly,
 		SizeTotalMonthly:   totalSizeMonthly,
 		SizeTotalYearly:    totalSizeYearly,
-		SizeTotalForDelete: totalSizeDaily,
+		SizeTotalForDelete: totalSizeForDelete,
 	}
 }
