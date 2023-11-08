@@ -46,7 +46,6 @@ You can configure Rotate Files using the following options:
 
 Supported third-party storage providers:
 
-- Amazon S3
 - CloudFlare R2
 - MinIO
 - DigitalOcean Spaces
@@ -87,10 +86,10 @@ Here is an example of how to use Rotate Files:
 rotate s3://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 
 # Google Cloud Storage
-go run ./cmd/rotate gcs://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
+rotate gcs://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 
 # Azure Blob Storage
-go run ./cmd/rotate blob://example-storage-account-name/example-container/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
+rotate blob://example-storage-account-name/example-container/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 ```
 
 This command will rotate the files in the specified S3 bucket, preserving 24 hourly backups, 7 daily backups, 10 weekly backups, and 12 monthly backups.
