@@ -107,7 +107,7 @@ func GetAccountContainerAndPath(fullPath string) (string, string, string) {
 	}
 
 	path := ""
-	if len(pathParts) > 1 && strings.TrimSpace(pathParts[1]) != "" {
+	if len(pathParts) > 2 && strings.TrimSpace(pathParts[2]) != "" {
 		path = pathParts[2]
 	}
 

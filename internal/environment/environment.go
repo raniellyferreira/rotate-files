@@ -38,5 +38,5 @@ func GetEnvInt(key string, defaultVal int) int {
 
 func EnvExists(key string) bool {
 	value, exists := os.LookupEnv(key)
-	return exists && len(value) > 0
+	return exists && value != ""
 }
