@@ -10,7 +10,7 @@ require (
 	github.com/golang-module/carbon v1.7.3
 	github.com/joho/godotenv v1.5.1
 	github.com/thatisuday/commando v1.0.4
-	google.golang.org/api v0.150.0
+	google.golang.org/api v0.151.0
 )
 
 require (
