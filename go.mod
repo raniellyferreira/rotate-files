@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/storage v1.34.1
-	github.com/aws/aws-sdk-go-v2 v1.22.1
+	github.com/aws/aws-sdk-go-v2 v1.24.1
 	github.com/aws/aws-sdk-go-v2/config v1.22.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.42.0
 	github.com/golang-module/carbon v1.7.3
@@ -71,7 +71,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.16.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.17.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.25.0 // indirect
-	github.com/aws/smithy-go v1.16.0 // indirect
+	github.com/aws/smithy-go v1.19.0 // indirect
 	github.com/stretchr/testify v1.8.4
 	github.com/thatisuday/clapper v1.0.10 // indirect
 )
