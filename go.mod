@@ -18,9 +18,9 @@ require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.5 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.0 // indirect
-	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.5.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.5.1 // indirect
@@ -32,23 +32,23 @@ require (
 	github.com/gobuffalo/envy v1.7.0 // indirect
 	github.com/gobuffalo/packd v0.3.0 // indirect
 	github.com/gobuffalo/packr v1.30.1 // indirect
-	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/crypto v0.15.0 // indirect
-	golang.org/x/net v0.18.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
@@ -62,8 +62,8 @@ require (
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.2.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.1
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.3.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.15.1 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.14.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.0 // indirect
