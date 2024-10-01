@@ -37,13 +37,13 @@ func (r *RotationManager) ListBackups(path string) ([]*Backup, error) {
 		return nil, err
 	}
 
-	var backups []*Backup
-	for _, info := range infos {
-		backups = append(backups, &Backup{
+	backups := make([]*Backup, len(infos))
+	for i, info := range infos {
+		backups[i] = &Backup{
 			Path:      info.Path,
 			Size:      info.Size,
 			Timestamp: info.Timestamp,
-		})
+		}
 	}
 	return backups, nil
 }
