@@ -33,7 +33,7 @@ You can configure Rotate Files using the following options:
 - `-m, --monthly`: number of monthly backups to preserve (default: 12)
 - `-v, --version`: displays version number
 - `-w, --weekly`: number of weekly backups to preserve (default: 14)
-- `-y, --yearly`: number of yearly backups to preserve, set 0 to preserver always (default: 0)
+- `-y, --yearly`: number of annual backups to preserve, set to 0 for no preservation (default is -1 for preserve always)
 
 ## Environment Vars
 

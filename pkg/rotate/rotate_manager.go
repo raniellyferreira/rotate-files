@@ -48,37 +48,62 @@ func (r *RotationManager) ListBackups(path string) ([]*Backup, error) {
 	return backups, nil
 }
 
+func (r *RotationManager) RemoveBackup(fullPath string) error {
+	return r.provider.Delete(fullPath)
+}
+
 func (r *RotationManager) RotateBackups(backups []*Backup, scheme *BackupRotationScheme) *BackupSummary {
+	return RotateBackupsOf(backups, scheme, carbon.Now())
+}
+
+func RotateBackupsOf(backups []*Backup, scheme *BackupRotationScheme, current carbon.Carbon) *BackupSummary {
 	sort.Sort(BackupFiles(backups))
 
 	var hourly, daily, weekly, monthly, yearly, forDelete BackupFiles
+	var prevYearlyBackup, prevMonthlyBackup, prevWeeklyBackup, prevDailyBackup, prevHourlyBackup *carbon.Carbon
 	var totalSizeHourly, totalSizeDaily, totalSizeWeekly, totalSizeMonthly, totalSizeYearly, totalSizeForDelete int64
 
-	current := carbon.Now()
-
 	for _, backup := range backups {
-		switch {
-		case backup.IsHourlyOf(current) && len(hourly) < scheme.Hourly:
+		addedToCategory := false
+
+		if backup.IsHourlyOf(current, prevHourlyBackup) && len(hourly) < scheme.Hourly {
 			hourly = append(hourly, backup)
+			prevHourlyBackup = &backup.Timestamp
 			totalSizeHourly += backup.Size
+			addedToCategory = true
+		}
 
-		case backup.IsDailyOf(current) && len(daily) < scheme.Daily:
+		if backup.IsDailyOf(current, prevDailyBackup) && len(daily) < scheme.Daily {
 			daily = append(daily, backup)
+			prevDailyBackup = &backup.Timestamp
 			totalSizeDaily += backup.Size
+			addedToCategory = true
+		}
 
-		case backup.IsWeeklyOf(current, scheme.Weekly) && len(weekly) < scheme.Weekly:
+		if backup.IsWeeklyOf(current, prevWeeklyBackup, scheme.Weekly) && len(weekly) < scheme.Weekly {
 			weekly = append(weekly, backup)
+			prevWeeklyBackup = &backup.Timestamp
 			totalSizeWeekly += backup.Size
+			addedToCategory = true
+		}
 
-		case backup.IsMonthlyOf(current) && len(monthly) < scheme.Monthly:
+		if backup.IsMonthlyOf(current, prevMonthlyBackup) && len(monthly) < scheme.Monthly {
 			monthly = append(monthly, backup)
+			prevMonthlyBackup = &backup.Timestamp
 			totalSizeMonthly += backup.Size
+			addedToCategory = true
+		}
 
-		case backup.IsYearlyOf(current) && len(yearly) < scheme.Yearly:
-			yearly = append(yearly, backup)
-			totalSizeYearly += backup.Size
+		if backup.IsYearlyOf(current, prevYearlyBackup) {
+			if scheme.Yearly == -1 || len(yearly) < scheme.Yearly {
+				yearly = append(yearly, backup)
+				prevYearlyBackup = &backup.Timestamp
+				totalSizeYearly += backup.Size
+				addedToCategory = true
+			}
+		}
 
-		default:
+		if !addedToCategory {
 			forDelete = append(forDelete, backup)
 			totalSizeForDelete += backup.Size
 		}
@@ -98,8 +123,4 @@ func (r *RotationManager) RotateBackups(backups []*Backup, scheme *BackupRotatio
 		SizeTotalYearly:    totalSizeYearly,
 		SizeTotalForDelete: totalSizeForDelete,
 	}
-}
-
-func (r *RotationManager) RemoveBackup(path string) error {
-	return r.provider.Delete(path)
 }

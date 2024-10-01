@@ -19,7 +19,6 @@ package rotate
 import (
 	"fmt"
 	"log"
-	"sort"
 
 	"github.com/golang-module/carbon"
 )
@@ -107,80 +106,80 @@ func (b Backup) String() string {
 	return fmt.Sprintf("Path: %s, Timestamp: %s", b.Path, b.Timestamp)
 }
 
-func (b Backup) IsHourly() bool {
-	return b.IsHourlyOf(carbon.Now())
-}
-
-func (b Backup) IsDaily() bool {
-	return b.IsDailyOf(carbon.Now())
-}
-
-func (b Backup) IsWeekly(limit int) bool {
-	return b.IsWeeklyOf(carbon.Now(), limit)
-}
-
-func (b Backup) IsMonthly() bool {
-	return b.IsMonthlyOf(carbon.Now())
-}
-
-func (b Backup) IsYearly() bool {
-	return b.IsYearlyOf(carbon.Now())
-}
-
-func (b Backup) IsHourlyOf(date carbon.Carbon) bool {
+func (b Backup) IsHourlyOf(date carbon.Carbon, prev *carbon.Carbon) bool {
+	if b.IsSameHour(prev) {
+		return false
+	}
 	return b.Timestamp.DiffInHours(date) <= carbon.HoursPerDay
 }
 
-func (b Backup) IsDailyOf(date carbon.Carbon) bool {
+func (b Backup) IsDailyOf(date carbon.Carbon, prev *carbon.Carbon) bool {
+	if b.IsSameDay(prev) {
+		return false
+	}
 	diff := int(b.Timestamp.DiffInDays(date))
 	return diff >= 1 && diff <= carbon.DaysPerWeek
 }
 
-func (b Backup) IsWeeklyOf(date carbon.Carbon, limit int) bool {
+func (b Backup) IsWeeklyOf(date carbon.Carbon, prev *carbon.Carbon, limit int) bool {
+	if b.IsSameWeek(prev) {
+		return false
+	}
 	return b.Timestamp.DiffInWeeks(date) <= int64(limit) && b.Timestamp.IsSunday()
 }
 
-func (b Backup) IsMonthlyOf(date carbon.Carbon) bool {
+func (b Backup) IsMonthlyOf(date carbon.Carbon, prev *carbon.Carbon) bool {
+	if b.IsSameMonth(prev) {
+		return false
+	}
 	return b.Timestamp.DiffInMonths(date) <= 13 && b.Timestamp.DiffInWeeks(date) >= 4
 }
 
-func (b Backup) IsYearlyOf(date carbon.Carbon) bool {
-	return (b.Timestamp.DiffInMonths(date) > 6 && !b.Timestamp.IsSameYear(date)) || b.Timestamp.DiffInMonths(date) >= 12
+func (b Backup) IsYearlyOf(date carbon.Carbon, prevBackup *carbon.Carbon) bool {
+	// Se houver um backup anterior no mesmo ano, não o consideramos anual
+	if b.IsSameYear(prevBackup) {
+		return false
+	}
+
+	monthsDiff := b.Timestamp.DiffInMonths(date)
+
+	// Verificamos se o backup tem pelo menos 12 meses ou mais de 6 meses e é de um ano diferente
+	return monthsDiff >= 12 || (monthsDiff > 6 && !b.IsSameYear(&date))
 }
 
-func (b Backup) IsSameHour(compare *Backup) bool {
+func (b Backup) IsSameHour(compare *carbon.Carbon) bool {
 	if compare == nil {
 		return false
 	}
-	return b.Timestamp.IsSameHour(compare.Timestamp)
+	return b.Timestamp.IsSameHour(*compare)
 }
 
-func (b Backup) IsSameDay(compare *Backup) bool {
+func (b Backup) IsSameDay(compare *carbon.Carbon) bool {
 	if compare == nil {
 		return false
 	}
-	return b.Timestamp.IsSameDay(compare.Timestamp)
+	return b.Timestamp.IsSameDay(*compare)
 }
 
-func (b Backup) IsSameWeek(compare *Backup) bool {
+func (b Backup) IsSameWeek(compare *carbon.Carbon) bool {
 	if compare == nil {
 		return false
 	}
-	return b.Timestamp.Between(compare.Timestamp.StartOfWeek(), compare.Timestamp.EndOfWeek())
+	return b.Timestamp.Between(compare.StartOfWeek(), compare.EndOfWeek())
 }
 
-func (b Backup) IsSameMonth(compare *Backup) bool {
+func (b Backup) IsSameMonth(compare *carbon.Carbon) bool {
 	if compare == nil {
 		return false
 	}
-	return b.Timestamp.IsSameMonth(compare.Timestamp)
+	return b.Timestamp.IsSameMonth(*compare)
 }
 
-func (b Backup) IsSameYear(compare *Backup) bool {
+func (b Backup) IsSameYear(compare *carbon.Carbon) bool {
 	if compare == nil {
 		return false
 	}
-	return b.Timestamp.IsSameYear(compare.Timestamp)
+	return b.Timestamp.IsSameYear(*compare)
 }
 
 type BackupFiles []*Backup
@@ -195,65 +194,4 @@ func (b BackupFiles) Swap(i, j int) {
 
 func (b BackupFiles) Len() int {
 	return len(b)
-}
-
-func (b BackupFiles) Rotate(rotationScheme *BackupRotationScheme) BackupSummary {
-	return b.RotateOf(rotationScheme, carbon.Now())
-}
-
-func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date carbon.Carbon) BackupSummary {
-	var hourly, daily, weekly, monthly, yearly, forDelete BackupFiles
-	var prevHourly, prevDaily, prevWeekly, prevMonthly, prevYearly *Backup
-	var totalSizeHourly, totalSizeDaily, totalSizeWeekly, totalSizeMonthly, totalSizeYearly, totalSizeForDelete int64
-
-	sort.Sort(backups)
-
-	for _, backup := range backups {
-		switch {
-		case backup.IsHourlyOf(date) && !backup.IsSameHour(prevHourly) && len(hourly) < rotationScheme.Hourly:
-			hourly = append(hourly, backup)
-			totalSizeHourly += backup.Size
-			prevHourly = backup
-
-		case backup.IsDailyOf(date) && !backup.IsSameDay(prevDaily) && len(daily) < rotationScheme.Daily:
-			daily = append(daily, backup)
-			totalSizeDaily += backup.Size
-			prevDaily = backup
-
-		case backup.IsWeeklyOf(date, rotationScheme.Weekly) && !backup.IsSameWeek(prevWeekly) && len(weekly) < rotationScheme.Weekly:
-			weekly = append(weekly, backup)
-			totalSizeWeekly += backup.Size
-			prevWeekly = backup
-
-		case backup.IsMonthlyOf(date) && !backup.IsSameMonth(prevMonthly) && len(monthly) < rotationScheme.Monthly:
-			monthly = append(monthly, backup)
-			totalSizeMonthly += backup.Size
-			prevMonthly = backup
-
-		case backup.IsYearlyOf(date) && !backup.IsSameYear(prevYearly) && (rotationScheme.Yearly < 1 || len(yearly) < rotationScheme.Yearly):
-			yearly = append(yearly, backup)
-			totalSizeYearly += backup.Size
-			prevYearly = backup
-
-		default:
-			forDelete = append(forDelete, backup)
-			totalSizeForDelete += backup.Size
-		}
-	}
-
-	return BackupSummary{
-		Hourly:    hourly,
-		Daily:     daily,
-		Weekly:    weekly,
-		Monthly:   monthly,
-		Yearly:    yearly,
-		ForDelete: forDelete,
-
-		SizeTotalHourly:    totalSizeHourly,
-		SizeTotalDaily:     totalSizeDaily,
-		SizeTotalWeekly:    totalSizeWeekly,
-		SizeTotalMonthly:   totalSizeMonthly,
-		SizeTotalYearly:    totalSizeYearly,
-		SizeTotalForDelete: totalSizeForDelete,
-	}
 }
