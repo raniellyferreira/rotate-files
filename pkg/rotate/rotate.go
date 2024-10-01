@@ -34,12 +34,12 @@ type BackupRotationScheme struct {
 }
 
 type BackupSummary struct {
-	Hourly             []Backup
-	Daily              []Backup
-	Weekly             []Backup
-	Monthly            []Backup
-	Yearly             []Backup
-	ForDelete          []Backup
+	Hourly             []*Backup
+	Daily              []*Backup
+	Weekly             []*Backup
+	Monthly            []*Backup
+	Yearly             []*Backup
+	ForDelete          []*Backup
 	SizeTotalHourly    int64
 	SizeTotalDaily     int64
 	SizeTotalWeekly    int64
@@ -69,7 +69,7 @@ func (summary BackupSummary) Print() {
 	summary.printBackups("Delete", summary.ForDelete, summary.SizeTotalForDelete)
 }
 
-func (summary BackupSummary) printBackups(category string, backups []Backup, sizeTotal int64) {
+func (summary BackupSummary) printBackups(category string, backups []*Backup, sizeTotal int64) {
 	formattedSize := summary.formatSize(sizeTotal)
 	log.Printf("%s matched [%d]:", category, len(backups))
 	if len(backups) == 0 {
@@ -148,42 +148,42 @@ func (b Backup) IsYearlyOf(date carbon.Carbon) bool {
 	return (b.Timestamp.DiffInMonths(date) > 6 && !b.Timestamp.IsSameYear(date)) || b.Timestamp.DiffInMonths(date) >= 12
 }
 
-func (b Backup) IsSameHour(compare Backup) bool {
-	if compare == (Backup{}) {
+func (b Backup) IsSameHour(compare *Backup) bool {
+	if compare == nil {
 		return false
 	}
 	return b.Timestamp.IsSameHour(compare.Timestamp)
 }
 
-func (b Backup) IsSameDay(compare Backup) bool {
-	if compare == (Backup{}) {
+func (b Backup) IsSameDay(compare *Backup) bool {
+	if compare == nil {
 		return false
 	}
 	return b.Timestamp.IsSameDay(compare.Timestamp)
 }
 
-func (b Backup) IsSameWeek(compare Backup) bool {
-	if compare == (Backup{}) {
+func (b Backup) IsSameWeek(compare *Backup) bool {
+	if compare == nil {
 		return false
 	}
 	return b.Timestamp.Between(compare.Timestamp.StartOfWeek(), compare.Timestamp.EndOfWeek())
 }
 
-func (b Backup) IsSameMonth(compare Backup) bool {
-	if compare == (Backup{}) {
+func (b Backup) IsSameMonth(compare *Backup) bool {
+	if compare == nil {
 		return false
 	}
 	return b.Timestamp.IsSameMonth(compare.Timestamp)
 }
 
-func (b Backup) IsSameYear(compare Backup) bool {
-	if compare == (Backup{}) {
+func (b Backup) IsSameYear(compare *Backup) bool {
+	if compare == nil {
 		return false
 	}
 	return b.Timestamp.IsSameYear(compare.Timestamp)
 }
 
-type BackupFiles []Backup
+type BackupFiles []*Backup
 
 func (b BackupFiles) Less(i, j int) bool {
 	return b[i].Timestamp.Gt(b[j].Timestamp)
@@ -203,7 +203,7 @@ func (b BackupFiles) Rotate(rotationScheme *BackupRotationScheme) BackupSummary 
 
 func (backups BackupFiles) RotateOf(rotationScheme *BackupRotationScheme, date carbon.Carbon) BackupSummary {
 	var hourly, daily, weekly, monthly, yearly, forDelete BackupFiles
-	var prevHourly, prevDaily, prevWeekly, prevMonthly, prevYearly Backup
+	var prevHourly, prevDaily, prevWeekly, prevMonthly, prevYearly *Backup
 	var totalSizeHourly, totalSizeDaily, totalSizeWeekly, totalSizeMonthly, totalSizeYearly, totalSizeForDelete int64
 
 	sort.Sort(backups)

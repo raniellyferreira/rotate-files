@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rotate
+package utils
 
 import "strings"
 
-func GetBucketAndPrefix(fullPath string) (string, string) {
-	parts := strings.SplitN(fullPath, "://", 2)
+// GetBucketAndKey returns the bucket and key from a full path. (for AWS and Google)
+func GetBucketAndKey(fullPath string) (string, string) {
+	parts := strings.SplitN(strings.TrimRight(fullPath, "/"), "://", 2)
 	if len(parts) < 2 {
-		return "", ""
+		return parts[0], ""
 	}
 	pathParts := strings.SplitN(parts[1], "/", 2)
 	bucket := pathParts[0]
@@ -30,4 +31,24 @@ func GetBucketAndPrefix(fullPath string) (string, string) {
 		prefix = pathParts[1]
 	}
 	return bucket, prefix
+}
+
+// GetAccountContainerAndPath returns the account, container and path from a full path. (for Azure)
+func GetAccountContainerAndPath(fullPath string) (string, string, string) {
+	parts := strings.SplitN(strings.TrimRight(fullPath, "/"), "://", 2)
+	if len(parts) < 2 {
+		return "", "", ""
+	}
+
+	pathParts := strings.SplitN(parts[1], "/", 3)
+	if len(pathParts) < 2 {
+		return "", "", ""
+	}
+
+	path := ""
+	if len(pathParts) > 2 && strings.TrimSpace(pathParts[2]) != "" && pathParts[2] != "/" {
+		path = pathParts[2]
+	}
+
+	return pathParts[0], pathParts[1], path
 }

@@ -33,7 +33,7 @@ var (
 	// Increment major number for new feature additions and behavioral changes.
 	// Increment minor number for medium feature changes.
 	// Increment patch number for bug fixes and performance enhancements.
-	version = "1.1.0"
+	version = "1.2.0"
 
 	// metadata is extra build time data
 	metadata = ""

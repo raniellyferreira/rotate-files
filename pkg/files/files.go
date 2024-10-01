@@ -19,38 +19,33 @@ package files
 import (
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/golang-module/carbon"
-	"github.com/raniellyferreira/rotate-files/pkg/rotate"
+	"github.com/raniellyferreira/rotate-files/pkg/providers"
 )
 
-func GetFileInfo(path string) (string, int64, time.Time, error) {
-	file, err := os.Stat(path)
+type LocalProvider struct{}
 
-	if err != nil {
-		return "", 0, time.Time{}, err
-	}
-
-	return path, file.Size(), file.ModTime(), nil
+func NewLocalProvider() *LocalProvider {
+	return &LocalProvider{}
 }
 
-func ListDir(path string) (rotate.BackupFiles, error) {
-	files := rotate.BackupFiles{}
+func (l *LocalProvider) Delete(fullPath string) error {
+	return os.Remove(fullPath)
+}
 
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+func (l *LocalProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error) {
+	var files []*providers.BackupInfo
+
+	err := filepath.Walk(fullPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() {
-			file, size, date, err := GetFileInfo(path)
-			if err != nil {
-				return err
-			}
-			files = append(files, rotate.Backup{
-				Path:      file,
-				Size:      size,
-				Timestamp: carbon.FromStdTime(date),
+			files = append(files, &providers.BackupInfo{
+				Path:      path,
+				Size:      info.Size(),
+				Timestamp: carbon.FromStdTime(info.ModTime()),
 			})
 		}
 		return nil
@@ -61,8 +56,4 @@ func ListDir(path string) (rotate.BackupFiles, error) {
 	}
 
 	return files, nil
-}
-
-func DeleteLocalFile(path string) error {
-	return os.Remove(path)
 }

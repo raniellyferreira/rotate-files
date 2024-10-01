@@ -18,111 +18,90 @@ package aws
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/golang-module/carbon"
 	"github.com/raniellyferreira/rotate-files/internal/environment"
-	"github.com/raniellyferreira/rotate-files/pkg/rotate"
+	"github.com/raniellyferreira/rotate-files/pkg/providers"
+	"github.com/raniellyferreira/rotate-files/pkg/utils"
 )
 
-var ClientS3 *s3.Client
+type AWSProvider struct {
+	client *s3.Client
+}
 
-func loadConfig() {
-	if ClientS3 != nil {
-		return
-	}
-
-	var err error
-	var cfg aws.Config
-
+func NewAWSProvider() (*AWSProvider, error) {
 	region := environment.GetEnv("AWS_REGION", "us-east-1")
-	endpointOverride := environment.GetEnv("AWS_ENDPOINT_OVERRIDE", "")
+	endpoint := environment.GetEnv("AWS_ENDPOINT_OVERRIDE", "")
 
-	if endpointOverride == "" {
-		// Using the SDK's default configuration, loading additional config
-		// and credentials values from the environment variables, shared
-		// credentials, and shared configuration files
-		cfg, err = config.LoadDefaultConfig(
-			context.TODO(),
-			config.WithRegion(region),
-		)
-	} else {
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, signingRegion string, options ...interface{}) (aws.Endpoint, error) {
+	var cfg aws.Config
+	var err error
+
+	if endpoint != "" {
+		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 			return aws.Endpoint{
-				URL:               endpointOverride,
+				URL:               endpoint,
 				HostnameImmutable: true,
-				SigningName:       service,
-				SigningRegion:     signingRegion,
 			}, nil
 		})
-		cfg, err = config.LoadDefaultConfig(
-			context.TODO(),
+		cfg, err = config.LoadDefaultConfig(context.Background(),
 			config.WithRegion(region),
 			config.WithEndpointResolverWithOptions(customResolver),
 		)
-	}
-	if err != nil {
-		log.Fatalf("failed to load aws configuration, %v", err)
+	} else {
+		cfg, err = config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	}
 
-	ClientS3 = s3.NewFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	client := s3.NewFromConfig(cfg)
+	return &AWSProvider{client: client}, nil
 }
 
-func DeleteS3File(bucket, path string) error {
-	_, err := ClientS3.DeleteObject(context.Background(), &s3.DeleteObjectInput{
+func (a *AWSProvider) Delete(path string) error {
+	bucket, key := utils.GetBucketAndKey(path)
+	_, err := a.client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
 		Bucket: aws.String(bucket),
-		Key:    aws.String(path),
+		Key:    aws.String(key),
 	})
 	return err
 }
 
-func GetAllS3Files(bucket, prefix string) ([]types.Object, error) {
+func (a *AWSProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error) {
 	var continuationToken *string
-	files := make([]types.Object, 0)
+	var files []*providers.BackupInfo
+
+	bucket, path := utils.GetBucketAndKey(fullPath)
+
 	for {
-		resp, err := ClientS3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		resp, err := a.client.ListObjectsV2(context.Background(), &s3.ListObjectsV2Input{
 			Bucket:            aws.String(bucket),
-			Prefix:            aws.String(prefix),
-			MaxKeys:           1e4, //10.000
+			Prefix:            aws.String(path),
 			ContinuationToken: continuationToken,
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		files = append(files, resp.Contents...)
+		for _, obj := range resp.Contents {
+			files = append(files, &providers.BackupInfo{
+				Path:      fmt.Sprintf("s3://%s/%s", bucket, aws.ToString(obj.Key)),
+				Size:      aws.ToInt64(obj.Size),
+				Timestamp: carbon.FromStdTime(aws.ToTime(obj.LastModified)),
+			})
+		}
 
-		// Verifica se houve paginação e atualiza o continuationToken
-		if !resp.IsTruncated {
+		if aws.ToBool(resp.IsTruncated) {
+			continuationToken = resp.NextContinuationToken
+		} else {
 			break
 		}
-		continuationToken = resp.NextContinuationToken
 	}
+
 	return files, nil
-}
-
-func GetS3FilesList(bucket, prefix string) *rotate.BackupFiles {
-	loadConfig()
-
-	result, err := GetAllS3Files(bucket, prefix)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	backups := rotate.BackupFiles{}
-
-	for _, obj := range result {
-		backups = append(backups, rotate.Backup{
-			Bucket:    bucket,
-			Path:      *obj.Key,
-			Size:      obj.Size,
-			Timestamp: carbon.FromStdTime(*obj.LastModified),
-		})
-	}
-
-	return &backups
 }

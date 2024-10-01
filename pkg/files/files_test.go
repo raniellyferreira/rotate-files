@@ -23,7 +23,9 @@ import (
 	"github.com/raniellyferreira/rotate-files/pkg/files"
 )
 
-func TestListDir(t *testing.T) {
+func TestLocalProvider_ListFiles(t *testing.T) {
+	provider := files.NewLocalProvider()
+
 	t.Run("Teste com diretório válido", func(t *testing.T) {
 		dirPath := "testdir"
 		filePaths := []string{
@@ -45,35 +47,30 @@ func TestListDir(t *testing.T) {
 			file.Close()
 		}
 
-		files, err := files.ListDir(dirPath)
+		backups, err := provider.ListFiles(dirPath)
 		if err != nil {
 			t.Errorf("Erro inesperado: %v", err)
 		}
 
 		expectedLen := len(filePaths)
-		if len(files) != expectedLen {
-			t.Errorf("Resultado incorreto. Esperado: %d arquivos, Obtido: %d arquivos", expectedLen, len(files))
-		}
-
-		for _, path := range filePaths {
-			err = os.Remove(path)
-			if err != nil {
-				t.Fatal(err)
-			}
+		if len(backups) != expectedLen {
+			t.Errorf("Resultado incorreto. Esperado: %d arquivos, Obtido: %d arquivos", expectedLen, len(backups))
 		}
 	})
 
 	t.Run("Teste com diretório inexistente", func(t *testing.T) {
 		dirPath := "nonexistentdir"
 
-		_, err := files.ListDir(dirPath)
+		_, err := provider.ListFiles(dirPath)
 		if err == nil {
 			t.Errorf("Esperava um erro, mas nenhum ocorreu")
 		}
 	})
 }
 
-func TestDeleteLocalFile(t *testing.T) {
+func TestLocalProvider_Delete(t *testing.T) {
+	provider := files.NewLocalProvider()
+
 	t.Run("Teste com arquivo existente", func(t *testing.T) {
 		path := "testfile.txt"
 
@@ -83,7 +80,7 @@ func TestDeleteLocalFile(t *testing.T) {
 		}
 		file.Close()
 
-		err = files.DeleteLocalFile(path)
+		err = provider.Delete(path)
 		if err != nil {
 			t.Errorf("Erro inesperado: %v", err)
 		}
@@ -97,7 +94,7 @@ func TestDeleteLocalFile(t *testing.T) {
 	t.Run("Teste com arquivo inexistente", func(t *testing.T) {
 		path := "nonexistentfile.txt"
 
-		err := files.DeleteLocalFile(path)
+		err := provider.Delete(path)
 		if err == nil {
 			t.Errorf("Esperava um erro, mas nenhum ocorreu")
 		}
