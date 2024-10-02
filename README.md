@@ -26,14 +26,14 @@ curl -SsL https://github.com/raniellyferreira/rotate-files/raw/master/environmen
 
 You can configure Rotate Files using the following options:
 
-- `-d, --daily`: number of daily backups to preserve (default: 7)
+- `-d, --daily`: number of daily files to preserve (default: 7)
 - `-D, --dry-run`: simulate deletion process (default: false)
 - `-h, --help`: displays usage information of the application or a command
-- `-h, --hourly`: number of hourly backups to preserve (default: 24)
-- `-m, --monthly`: number of monthly backups to preserve (default: 12)
+- `-h, --hourly`: number of hourly files to preserve (default: 24)
+- `-m, --monthly`: number of monthly files to preserve (default: 12)
 - `-v, --version`: displays version number
-- `-w, --weekly`: number of weekly backups to preserve (default: 14)
-- `-y, --yearly`: number of yearly backups to preserve, set to 0 for no preservation (default is -1 for preserve always)
+- `-w, --weekly`: number of weekly files to preserve (default: 14)
+- `-y, --yearly`: number of yearly files to preserve, set to 0 for no preservation (default is -1 for preserve always)
 
 ## Environment Vars
 
@@ -92,7 +92,7 @@ rotate gs://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 
 rotate blob://example-storage-account-name/example-container/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 ```
 
-This command will rotate the files in the specified S3 bucket, preserving 24 hourly backups, 7 daily backups, 10 weekly backups, and 12 monthly backups.
+This command will rotate the files in the specified S3 bucket, preserving 24 hourly files, 7 daily files, 10 weekly files, and 12 monthly files.
 
 ## Contribution
 
