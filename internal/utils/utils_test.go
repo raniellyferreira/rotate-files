@@ -19,7 +19,7 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/raniellyferreira/rotate-files/pkg/utils"
+	"github.com/raniellyferreira/rotate-files/internal/utils"
 )
 
 func TestGetAccountContainerAndPath(t *testing.T) {
