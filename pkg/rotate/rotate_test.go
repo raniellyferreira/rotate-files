@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	rotationScheme = rotate.BackupRotationScheme{
+	rotationScheme = rotate.RotationScheme{
 		Hourly:  2,
 		Daily:   5,
 		Weekly:  10,
@@ -33,7 +33,7 @@ var (
 		Yearly:  -1,
 		DryRun:  false,
 	}
-	rotationSchemeWithLimit = rotate.BackupRotationScheme{
+	rotationSchemeWithLimit = rotate.RotationScheme{
 		Hourly:  2,
 		Daily:   5,
 		Weekly:  10,
@@ -52,49 +52,49 @@ func TestIsYearlyOf(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		backup     rotate.Backup
+		backup     rotate.File
 		date       carbon.Carbon
 		prevBackup *carbon.Carbon
 		expected   bool
 	}{
 		{
 			name:       "Backup with more than 12 months difference",
-			backup:     rotate.Backup{Timestamp: carbon.CreateFromDate(2023, 9, 30)},
+			backup:     rotate.File{Timestamp: carbon.CreateFromDate(2023, 9, 30)},
 			date:       fixedDate,
 			prevBackup: nil,
 			expected:   true,
 		},
 		{
 			name:       "Backup with exactly 12 months difference",
-			backup:     rotate.Backup{Timestamp: carbon.CreateFromDate(2023, 10, 1)},
+			backup:     rotate.File{Timestamp: carbon.CreateFromDate(2023, 10, 1)},
 			date:       fixedDate,
 			prevBackup: nil,
 			expected:   true,
 		},
 		{
 			name:       "Backup with 6-12 months difference, different year",
-			backup:     rotate.Backup{Timestamp: carbon.CreateFromDate(2023, 3, 31)},
+			backup:     rotate.File{Timestamp: carbon.CreateFromDate(2023, 3, 31)},
 			date:       fixedDate,
 			prevBackup: nil,
 			expected:   true,
 		},
 		{
 			name:       "Backup within the same year and less than 12 months",
-			backup:     rotate.Backup{Timestamp: carbon.CreateFromDate(2024, 1, 1)},
+			backup:     rotate.File{Timestamp: carbon.CreateFromDate(2024, 1, 1)},
 			date:       fixedDate,
 			prevBackup: nil,
 			expected:   false,
 		},
 		{
 			name:       "Backup just over 6 months difference but same year",
-			backup:     rotate.Backup{Timestamp: carbon.CreateFromDate(2024, 3, 1)},
+			backup:     rotate.File{Timestamp: carbon.CreateFromDate(2024, 3, 1)},
 			date:       fixedDate,
 			prevBackup: nil,
 			expected:   false,
 		},
 		{
 			name:       "Backup with same year as previous",
-			backup:     rotate.Backup{Timestamp: carbon.CreateFromDate(2023, 12, 31)},
+			backup:     rotate.File{Timestamp: carbon.CreateFromDate(2023, 12, 31)},
 			date:       fixedDate,
 			prevBackup: carbonPtr(carbon.CreateFromDate(2023, 1, 1)),
 			expected:   false,
@@ -112,7 +112,7 @@ func TestIsYearlyOf(t *testing.T) {
 func TestDeleteHourlyBackups(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 12).SetHour(11)
 
-	backups := []*rotate.Backup{
+	backups := []*rotate.File{
 		{Path: "/backup_0", Timestamp: today.SubHours(6)},
 		{Path: "/backup_1", Timestamp: today.SubHours(5)},
 		{Path: "/backup_2", Timestamp: today.SubHours(4)},
@@ -120,7 +120,7 @@ func TestDeleteHourlyBackups(t *testing.T) {
 		{Path: "/backup_4", Timestamp: today.SubHours(2)},
 	}
 
-	summaryBackups := rotate.RotateBackupsOf(backups, &rotationScheme, today)
+	summaryBackups := rotate.RotateFilesOf(backups, &rotationScheme, today)
 
 	assert.Equal(t, rotationScheme.Hourly, len(summaryBackups.Hourly))
 	assert.Equal(t, 3, len(summaryBackups.ForDelete))
@@ -130,7 +130,7 @@ func TestDeleteHourlyBackups(t *testing.T) {
 func TestDeleteDailyBackups(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 12).SetHour(10)
 
-	backups := []*rotate.Backup{
+	backups := []*rotate.File{
 		{Path: "/backup_1", Timestamp: today.SubDays(1)},
 		{Path: "/backup_1b", Timestamp: today.SubDays(1).SubHours(3)},
 		{Path: "/backup_2", Timestamp: today.SubDays(2)},
@@ -142,7 +142,7 @@ func TestDeleteDailyBackups(t *testing.T) {
 		{Path: "/backup_9", Timestamp: today.SubDays(8)},
 	}
 
-	summaryBackups := rotate.RotateBackupsOf(backups, &rotationScheme, today)
+	summaryBackups := rotate.RotateFilesOf(backups, &rotationScheme, today)
 
 	assert.Equal(t, rotationScheme.Daily, len(summaryBackups.Daily))
 	assert.Equal(t, 4, len(summaryBackups.ForDelete))         // Atualizado para refletir o resultado real
@@ -152,7 +152,7 @@ func TestDeleteDailyBackups(t *testing.T) {
 func TestDeleteWeeklyBackups(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 12).SetHour(10)
 
-	backups := []*rotate.Backup{
+	backups := []*rotate.File{
 		{Path: "/backup_1", Timestamp: today.SubWeeks(1).StartOfWeek()},
 		{Path: "/backup_1b", Timestamp: today.SubWeeks(1).StartOfWeek().SubHours(6)},
 		{Path: "/backup_2", Timestamp: today.SubWeeks(2).StartOfWeek()},
@@ -167,7 +167,7 @@ func TestDeleteWeeklyBackups(t *testing.T) {
 		{Path: "/backup_11", Timestamp: today.SubWeeks(11).StartOfWeek()},
 	}
 
-	summaryBackups := rotate.RotateBackupsOf(backups, &rotationScheme, today)
+	summaryBackups := rotate.RotateFilesOf(backups, &rotationScheme, today)
 
 	assert.Equal(t, rotationScheme.Weekly, len(summaryBackups.Weekly))
 	assert.Equal(t, 3, len(summaryBackups.Monthly))           // Atualizado para refletir o resultado real
@@ -178,7 +178,7 @@ func TestDeleteWeeklyBackups(t *testing.T) {
 func TestDeleteMonthlyBackupsStartsMonth(t *testing.T) {
 	today := carbon.CreateFromDate(2023, 1, 1).SetHour(10)
 
-	backups := []*rotate.Backup{
+	backups := []*rotate.File{
 		{Path: "/backup_1", Timestamp: today.SubMonths(1)},
 		{Path: "/backup_1b", Timestamp: today.SubMonths(1).SubHours(6)},
 		{Path: "/backup_2", Timestamp: today.SubMonths(2)},
@@ -196,7 +196,7 @@ func TestDeleteMonthlyBackupsStartsMonth(t *testing.T) {
 		{Path: "/backup_14", Timestamp: today.SubMonths(14)},
 	}
 
-	summaryBackups := rotate.RotateBackupsOf(backups, &rotationScheme, today)
+	summaryBackups := rotate.RotateFilesOf(backups, &rotationScheme, today)
 
 	assert.Equal(t, rotationScheme.Monthly, len(summaryBackups.Monthly))
 	assert.Equal(t, 2, len(summaryBackups.Yearly))            // Atualizado para refletir o resultado real
@@ -206,7 +206,7 @@ func TestDeleteMonthlyBackupsStartsMonth(t *testing.T) {
 func TestDeleteYearlyBackupsWithNoLimitTest(t *testing.T) {
 	today := carbon.CreateFromDate(2022, 12, 30).SetHour(10)
 
-	backups := []*rotate.Backup{
+	backups := []*rotate.File{
 		{Path: "/backup_2", Timestamp: today.SubYears(2)},
 		{Path: "/backup_3", Timestamp: today.SubYears(3)},
 		{Path: "/backup_4", Timestamp: today.SubYears(4)},
@@ -222,7 +222,7 @@ func TestDeleteYearlyBackupsWithNoLimitTest(t *testing.T) {
 		{Path: "/backup_14", Timestamp: today.SubYears(14)},
 	}
 
-	summaryBackups := rotate.RotateBackupsOf(backups, &rotationScheme, today)
+	summaryBackups := rotate.RotateFilesOf(backups, &rotationScheme, today)
 
 	assert.Equal(t, 0, len(summaryBackups.ForDelete))
 	assert.Equal(t, len(backups), summaryBackups.GetTotalCategorized())

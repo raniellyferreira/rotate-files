@@ -17,181 +17,115 @@ limitations under the License.
 package rotate
 
 import (
-	"fmt"
-	"log"
+	"sort"
 
 	"github.com/golang-module/carbon"
+	"github.com/raniellyferreira/rotate-files/pkg/providers"
 )
 
-type BackupRotationScheme struct {
-	Hourly  int
-	Daily   int
-	Weekly  int
-	Monthly int
-	Yearly  int
-	DryRun  bool
+type RotationManager struct {
+	provider providers.Provider
 }
 
-type BackupSummary struct {
-	Hourly             []*Backup
-	Daily              []*Backup
-	Weekly             []*Backup
-	Monthly            []*Backup
-	Yearly             []*Backup
-	ForDelete          []*Backup
-	SizeTotalHourly    int64
-	SizeTotalDaily     int64
-	SizeTotalWeekly    int64
-	SizeTotalMonthly   int64
-	SizeTotalYearly    int64
-	SizeTotalForDelete int64
+// NewRotationManager creates a new RotationManager for handling backup rotations.
+func NewRotationManager(provider providers.Provider) *RotationManager {
+	return &RotationManager{provider: provider}
 }
 
-func (s BackupSummary) GetTotalCategorized() int {
-	total := 0
-	total += len(s.Hourly)
-	total += len(s.Daily)
-	total += len(s.Weekly)
-	total += len(s.Monthly)
-	total += len(s.Yearly)
-	total += len(s.ForDelete)
-	return total
-}
+// ListFiles retrieves a list of files from the specified path.
+func (r *RotationManager) ListFiles(path string) ([]*File, error) {
+	infos, err := r.provider.ListFiles(path)
+	if err != nil {
+		return nil, err
+	}
 
-func (summary BackupSummary) Print() {
-	log.Println("")
-	summary.printBackups("Yearly", summary.Yearly, summary.SizeTotalYearly)
-	summary.printBackups("Monthly", summary.Monthly, summary.SizeTotalMonthly)
-	summary.printBackups("Weekly", summary.Weekly, summary.SizeTotalWeekly)
-	summary.printBackups("Daily", summary.Daily, summary.SizeTotalDaily)
-	summary.printBackups("Hourly", summary.Hourly, summary.SizeTotalHourly)
-	summary.printBackups("Delete", summary.ForDelete, summary.SizeTotalForDelete)
-}
-
-func (summary BackupSummary) printBackups(category string, backups []*Backup, sizeTotal int64) {
-	formattedSize := summary.formatSize(sizeTotal)
-	log.Printf("%s matched [%d]:", category, len(backups))
-	if len(backups) == 0 {
-		log.Println("  No files")
-	} else {
-		for _, v := range backups {
-			log.Println(" ", v.Path, summary.formatSize(v.Size), v.Timestamp)
+	files := make([]*File, len(infos))
+	for i, info := range infos {
+		files[i] = &File{
+			Path:      info.Path,
+			Size:      info.Size,
+			Timestamp: info.Timestamp,
 		}
-		log.Printf("  Total Size: %s", formattedSize)
 	}
-	log.Println("")
+	return files, nil
 }
 
-func (summary BackupSummary) formatSize(size int64) string {
-	const unit = 1024
-	if size < unit {
-		return fmt.Sprintf("%d B", size)
+// RemoveFile deletes a file from the filesystem using the specified full path.
+func (r *RotationManager) RemoveFile(fullPath string) error {
+	return r.provider.Delete(fullPath)
+}
+
+// RotateFiles categorizes the files based on the rotation scheme and the current time.
+func (r *RotationManager) RotateFiles(files []*File, scheme *RotationScheme) *Summary {
+	return RotateFilesOf(files, scheme, carbon.Now())
+}
+
+// RotateFilesOf categorizes the files based on the rotation scheme and the current time.
+func RotateFilesOf(files []*File, scheme *RotationScheme, current carbon.Carbon) *Summary {
+	sort.Sort(Files(files))
+
+	var hourly, daily, weekly, monthly, yearly, forDelete Files
+	var prevYearly, prevMonthly, prevWeekly, prevDaily, prevHourly *carbon.Carbon
+	var totalSizeHourly, totalSizeDaily, totalSizeWeekly, totalSizeMonthly, totalSizeYearly, totalSizeForDelete int64
+
+	for _, file := range files {
+		addedToCategory := false
+
+		if file.IsHourlyOf(current, prevHourly) && len(hourly) < scheme.Hourly {
+			hourly = append(hourly, file)
+			prevHourly = &file.Timestamp
+			totalSizeHourly += file.Size
+			addedToCategory = true
+		}
+
+		if file.IsDailyOf(current, prevDaily) && len(daily) < scheme.Daily {
+			daily = append(daily, file)
+			prevDaily = &file.Timestamp
+			totalSizeDaily += file.Size
+			addedToCategory = true
+		}
+
+		if file.IsWeeklyOf(current, prevWeekly, scheme.Weekly) && len(weekly) < scheme.Weekly {
+			weekly = append(weekly, file)
+			prevWeekly = &file.Timestamp
+			totalSizeWeekly += file.Size
+			addedToCategory = true
+		}
+
+		if file.IsMonthlyOf(current, prevMonthly) && len(monthly) < scheme.Monthly {
+			monthly = append(monthly, file)
+			prevMonthly = &file.Timestamp
+			totalSizeMonthly += file.Size
+			addedToCategory = true
+		}
+
+		if file.IsYearlyOf(current, prevYearly) {
+			if scheme.Yearly == -1 || len(yearly) < scheme.Yearly {
+				yearly = append(yearly, file)
+				prevYearly = &file.Timestamp
+				totalSizeYearly += file.Size
+				addedToCategory = true
+			}
+		}
+
+		if !addedToCategory {
+			forDelete = append(forDelete, file)
+			totalSizeForDelete += file.Size
+		}
 	}
-	div, exp := int64(unit), 0
-	for n := size / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
+
+	return &Summary{
+		Hourly:             hourly,
+		Daily:              daily,
+		Weekly:             weekly,
+		Monthly:            monthly,
+		Yearly:             yearly,
+		ForDelete:          forDelete,
+		SizeTotalHourly:    totalSizeHourly,
+		SizeTotalDaily:     totalSizeDaily,
+		SizeTotalWeekly:    totalSizeWeekly,
+		SizeTotalMonthly:   totalSizeMonthly,
+		SizeTotalYearly:    totalSizeYearly,
+		SizeTotalForDelete: totalSizeForDelete,
 	}
-	return fmt.Sprintf("%.1f%cB", float64(size)/float64(div), "KMGTPE"[exp])
-}
-
-type Backup struct {
-	Bucket    string
-	Path      string
-	Size      int64
-	Timestamp carbon.Carbon
-}
-
-func (b Backup) String() string {
-	return fmt.Sprintf("Path: %s, Timestamp: %s", b.Path, b.Timestamp)
-}
-
-func (b Backup) IsHourlyOf(date carbon.Carbon, prev *carbon.Carbon) bool {
-	if b.IsSameHour(prev) {
-		return false
-	}
-	return b.Timestamp.DiffInHours(date) <= carbon.HoursPerDay
-}
-
-func (b Backup) IsDailyOf(date carbon.Carbon, prev *carbon.Carbon) bool {
-	if b.IsSameDay(prev) {
-		return false
-	}
-	diff := int(b.Timestamp.DiffInDays(date))
-	return diff >= 1 && diff <= carbon.DaysPerWeek
-}
-
-func (b Backup) IsWeeklyOf(date carbon.Carbon, prev *carbon.Carbon, limit int) bool {
-	if b.IsSameWeek(prev) {
-		return false
-	}
-	return b.Timestamp.DiffInWeeks(date) <= int64(limit) && b.Timestamp.IsSunday()
-}
-
-func (b Backup) IsMonthlyOf(date carbon.Carbon, prev *carbon.Carbon) bool {
-	if b.IsSameMonth(prev) {
-		return false
-	}
-	return b.Timestamp.DiffInMonths(date) <= 13 && b.Timestamp.DiffInWeeks(date) >= 4
-}
-
-func (b Backup) IsYearlyOf(date carbon.Carbon, prevBackup *carbon.Carbon) bool {
-	// Se houver um backup anterior no mesmo ano, não o consideramos anual
-	if b.IsSameYear(prevBackup) {
-		return false
-	}
-
-	monthsDiff := b.Timestamp.DiffInMonths(date)
-
-	// Verificamos se o backup tem pelo menos 12 meses ou mais de 6 meses e é de um ano diferente
-	return monthsDiff >= 12 || (monthsDiff > 6 && !b.IsSameYear(&date))
-}
-
-func (b Backup) IsSameHour(compare *carbon.Carbon) bool {
-	if compare == nil {
-		return false
-	}
-	return b.Timestamp.IsSameHour(*compare)
-}
-
-func (b Backup) IsSameDay(compare *carbon.Carbon) bool {
-	if compare == nil {
-		return false
-	}
-	return b.Timestamp.IsSameDay(*compare)
-}
-
-func (b Backup) IsSameWeek(compare *carbon.Carbon) bool {
-	if compare == nil {
-		return false
-	}
-	return b.Timestamp.Between(compare.StartOfWeek(), compare.EndOfWeek())
-}
-
-func (b Backup) IsSameMonth(compare *carbon.Carbon) bool {
-	if compare == nil {
-		return false
-	}
-	return b.Timestamp.IsSameMonth(*compare)
-}
-
-func (b Backup) IsSameYear(compare *carbon.Carbon) bool {
-	if compare == nil {
-		return false
-	}
-	return b.Timestamp.IsSameYear(*compare)
-}
-
-type BackupFiles []*Backup
-
-func (b BackupFiles) Less(i, j int) bool {
-	return b[i].Timestamp.Gt(b[j].Timestamp)
-}
-
-func (b BackupFiles) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
-}
-
-func (b BackupFiles) Len() int {
-	return len(b)
 }

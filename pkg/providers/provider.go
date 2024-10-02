@@ -20,13 +20,14 @@ import (
 	"github.com/golang-module/carbon"
 )
 
-type BackupInfo struct {
+type FileInfo struct {
 	Path      string
 	Size      int64
 	Timestamp carbon.Carbon
 }
 
+// Provider defines the interface for cloud storage operations such as delete and list files.
 type Provider interface {
 	Delete(fullPath string) error
-	ListFiles(fullPath string) ([]*BackupInfo, error)
+	ListFiles(fullPath string) ([]*FileInfo, error)
 }

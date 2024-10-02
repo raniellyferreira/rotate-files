@@ -26,23 +26,26 @@ import (
 
 type LocalProvider struct{}
 
+// NewLocalProvider creates a new instance of LocalProvider for managing local file operations.
 func NewLocalProvider() *LocalProvider {
 	return &LocalProvider{}
 }
 
+// Delete removes a file from the local filesystem using the specified full path.
 func (l *LocalProvider) Delete(fullPath string) error {
 	return os.Remove(fullPath)
 }
 
-func (l *LocalProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error) {
-	var files []*providers.BackupInfo
+// ListFiles traverses the local directory specified by fullPath and returns a list of files.
+func (l *LocalProvider) ListFiles(fullPath string) ([]*providers.FileInfo, error) {
+	var files []*providers.FileInfo
 
 	err := filepath.Walk(fullPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() {
-			files = append(files, &providers.BackupInfo{
+			files = append(files, &providers.FileInfo{
 				Path:      path,
 				Size:      info.Size(),
 				Timestamp: carbon.FromStdTime(info.ModTime()),

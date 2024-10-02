@@ -25,14 +25,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/golang-module/carbon"
 	"github.com/raniellyferreira/rotate-files/internal/environment"
+	"github.com/raniellyferreira/rotate-files/internal/utils"
 	"github.com/raniellyferreira/rotate-files/pkg/providers"
-	"github.com/raniellyferreira/rotate-files/pkg/utils"
 )
 
 type AWSProvider struct {
 	client *s3.Client
 }
 
+// NewAWSProvider initializes a new AWSProvider with the given AWS configuration.
+// It supports custom endpoint resolution for testing purposes.
 func NewAWSProvider() (*AWSProvider, error) {
 	region := environment.GetEnv("AWS_REGION", "us-east-1")
 	endpoint := environment.GetEnv("AWS_ENDPOINT_OVERRIDE", "")
@@ -63,6 +65,7 @@ func NewAWSProvider() (*AWSProvider, error) {
 	return &AWSProvider{client: client}, nil
 }
 
+// Delete removes an object from an S3 bucket using the specified path.
 func (a *AWSProvider) Delete(path string) error {
 	bucket, key := utils.GetBucketAndKey(path)
 	_, err := a.client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
@@ -72,9 +75,10 @@ func (a *AWSProvider) Delete(path string) error {
 	return err
 }
 
-func (a *AWSProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error) {
+// ListFiles retrieves and lists all files within an S3 bucket with the given full path.
+func (a *AWSProvider) ListFiles(fullPath string) ([]*providers.FileInfo, error) {
 	var continuationToken *string
-	var files []*providers.BackupInfo
+	var files []*providers.FileInfo
 
 	bucket, path := utils.GetBucketAndKey(fullPath)
 
@@ -89,7 +93,7 @@ func (a *AWSProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error
 		}
 
 		for _, obj := range resp.Contents {
-			files = append(files, &providers.BackupInfo{
+			files = append(files, &providers.FileInfo{
 				Path:      fmt.Sprintf("s3://%s/%s", bucket, aws.ToString(obj.Key)),
 				Size:      aws.ToInt64(obj.Size),
 				Timestamp: carbon.FromStdTime(aws.ToTime(obj.LastModified)),

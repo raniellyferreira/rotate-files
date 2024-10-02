@@ -22,8 +22,8 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/golang-module/carbon"
 	"github.com/raniellyferreira/rotate-files/internal/environment"
+	"github.com/raniellyferreira/rotate-files/internal/utils"
 	"github.com/raniellyferreira/rotate-files/pkg/providers"
-	"github.com/raniellyferreira/rotate-files/pkg/utils"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -32,6 +32,7 @@ type GoogleProvider struct {
 	client *storage.Client
 }
 
+// NewGoogleProvider initializes a new GoogleProvider using credentials from the specified file.
 func NewGoogleProvider() (*GoogleProvider, error) {
 	credsFile := environment.GetEnv("GOOGLE_APPLICATION_CREDENTIALS", "")
 	client, err := storage.NewClient(context.Background(), option.WithCredentialsFile(credsFile))
@@ -41,17 +42,19 @@ func NewGoogleProvider() (*GoogleProvider, error) {
 	return &GoogleProvider{client: client}, nil
 }
 
+// Delete removes an object from a Google Cloud Storage bucket using the specified full path.
 func (g *GoogleProvider) Delete(fullPath string) error {
 	bucket, path := utils.GetBucketAndKey(fullPath)
 	obj := g.client.Bucket(bucket).Object(path)
 	return obj.Delete(context.Background())
 }
 
-func (g *GoogleProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error) {
+// ListFiles retrieves and lists all objects within a Google Cloud Storage bucket with the given full path.
+func (g *GoogleProvider) ListFiles(fullPath string) ([]*providers.FileInfo, error) {
 	bucket, prefix := utils.GetBucketAndKey(fullPath)
 	it := g.client.Bucket(bucket).Objects(context.Background(), &storage.Query{Prefix: prefix})
 
-	var files []*providers.BackupInfo
+	var files []*providers.FileInfo
 	for {
 		objAttrs, err := it.Next()
 		if err == iterator.Done {
@@ -61,7 +64,7 @@ func (g *GoogleProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, er
 			return nil, err
 		}
 
-		files = append(files, &providers.BackupInfo{
+		files = append(files, &providers.FileInfo{
 			Path:      fmt.Sprintf("gs://%s/%s", bucket, objAttrs.Name),
 			Size:      objAttrs.Size,
 			Timestamp: carbon.CreateFromTimestamp(objAttrs.Created.Unix()),

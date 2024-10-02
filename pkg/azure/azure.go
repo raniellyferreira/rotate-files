@@ -24,14 +24,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/golang-module/carbon"
 	"github.com/raniellyferreira/rotate-files/internal/environment"
+	"github.com/raniellyferreira/rotate-files/internal/utils"
 	"github.com/raniellyferreira/rotate-files/pkg/providers"
-	"github.com/raniellyferreira/rotate-files/pkg/utils"
 )
 
 type AzureProvider struct {
 	client *azblob.Client
 }
 
+// NewAzureProvider initializes a new AzureProvider using the connection string from environment variables.
 func NewAzureProvider() (*AzureProvider, error) {
 	connectionString := environment.GetEnv("AZURE_STORAGE_CONNECTION_STRING", "")
 	client, err := azblob.NewClientFromConnectionString(connectionString, nil)
@@ -41,17 +42,19 @@ func NewAzureProvider() (*AzureProvider, error) {
 	return &AzureProvider{client: client}, nil
 }
 
+// Delete removes a blob from an Azure container using the specified full path.
 func (az *AzureProvider) Delete(fullPath string) error {
 	_, container, path := utils.GetAccountContainerAndPath(fullPath)
 	_, err := az.client.DeleteBlob(context.Background(), container, path, nil)
 	return err
 }
 
-func (az *AzureProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, error) {
+// ListFiles retrieves and lists all blobs within an Azure container with the given full path.
+func (az *AzureProvider) ListFiles(fullPath string) ([]*providers.FileInfo, error) {
 	account, container, prefix := utils.GetAccountContainerAndPath(fullPath)
 	pager := az.client.NewListBlobsFlatPager(container, &azblob.ListBlobsFlatOptions{Prefix: &prefix})
 
-	var files []*providers.BackupInfo
+	var files []*providers.FileInfo
 	for pager.More() {
 		resp, err := pager.NextPage(context.Background())
 		if err != nil {
@@ -59,7 +62,7 @@ func (az *AzureProvider) ListFiles(fullPath string) ([]*providers.BackupInfo, er
 		}
 
 		for _, blob := range resp.Segment.BlobItems {
-			files = append(files, &providers.BackupInfo{
+			files = append(files, &providers.FileInfo{
 				Path:      fmt.Sprintf("blob://%s/%s/%s", account, container, aws.ToString(blob.Name)),
 				Size:      aws.ToInt64(blob.Properties.ContentLength),
 				Timestamp: carbon.FromStdTime(aws.ToTime(blob.Properties.CreationTime)),

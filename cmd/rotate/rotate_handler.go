@@ -41,7 +41,7 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 	yearlyInt, _ := flags[YEARLY_FLAG].GetInt()
 	dryRunBool, _ := flags[DRYRUN_FLAG].GetBool()
 
-	rotationScheme := &rotate.BackupRotationScheme{
+	rotationScheme := &rotate.RotationScheme{
 		Hourly:  hourlyInt,
 		Daily:   dailyInt,
 		Weekly:  weeklyInt,
@@ -60,7 +60,7 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 	}
 
 	manager := rotate.NewRotationManager(provider)
-	backups, err := manager.ListBackups(path)
+	backups, err := manager.ListFiles(path)
 	if err != nil {
 		log.Fatal("Error listing backups:", err)
 	}
@@ -70,13 +70,13 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 		return
 	}
 
-	summary := manager.RotateBackups(backups, rotationScheme)
+	summary := manager.RotateFiles(backups, rotationScheme)
 
 	if len(summary.ForDelete) > 0 {
 		if !rotationScheme.DryRun {
 			for _, backup := range summary.ForDelete {
 				log.Println("Deleting file...", backup.Path)
-				if err := manager.RemoveBackup(backup.Path); err != nil {
+				if err := manager.RemoveFile(backup.Path); err != nil {
 					log.Println("Error deleting file:", err)
 				}
 			}
