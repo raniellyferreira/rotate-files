@@ -33,7 +33,7 @@ You can configure Rotate Files using the following options:
 - `-m, --monthly`: number of monthly backups to preserve (default: 12)
 - `-v, --version`: displays version number
 - `-w, --weekly`: number of weekly backups to preserve (default: 14)
-- `-y, --yearly`: number of annual backups to preserve, set to 0 for no preservation (default is -1 for preserve always)
+- `-y, --yearly`: number of yearly backups to preserve, set to 0 for no preservation (default is -1 for preserve always)
 
 ## Environment Vars
 
@@ -86,7 +86,7 @@ Here is an example of how to use Rotate Files:
 rotate s3://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 
 # Google Cloud Storage
-rotate gcs://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
+rotate gs://example-bucket/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
 
 # Azure Blob Storage
 rotate blob://example-storage-account-name/example-container/backups/ --hourly 24 --daily 7 --weekly 10 --monthly 12
