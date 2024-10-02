@@ -1,6 +1,6 @@
 # Rotate Files
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/raniellyferreira/rotate-files)](https://goreportcard.com/report/github.com/raniellyferreira/rotate-files) ![License](https://img.shields.io/github/license/raniellyferreira/rotate-files)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raniellyferreira/rotate-files)](https://goreportcard.com/report/github.com/raniellyferreira/rotate-files) ![License](https://img.shields.io/github/license/raniellyferreira/rotate-files) [![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/github.com/raniellyferreira/rotate-files)
 
 ## Description
 
@@ -19,7 +19,7 @@ To run this project, you need to have the following installed:
 To install Rotate Files, run the following command in the terminal:
 
 ```bash
-curl -SsL https://raw.githubusercontent.com/raniellyferreira/rotate-files/master/environment/scripts/get | bash
+curl -SsL https://github.com/raniellyferreira/rotate-files/raw/master/environment/scripts/get | bash
 ```
 
 ## Configuration

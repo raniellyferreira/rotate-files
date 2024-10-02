@@ -18,7 +18,7 @@
 # the package manager for Go: https://github.com/helm/helm/blob/main/scripts/get-helm-3
 
 # To run this script execute:
-#   `curl -SsL https://raw.githubusercontent.com/raniellyferreira/rotate-files/master/environment/scripts/get | bash`
+#   `curl -SsL https://github.com/raniellyferreira/rotate-files/raw/master/environment/scripts/get | bash`
 
 : ${BINARY_NAME:="rotate"}
 : ${USE_SUDO:="true"}
@@ -52,7 +52,7 @@ initOS() {
 
   case "$OS" in
     # Minimalist GNU for Windows
-    mingw*|cygwin*) OS='windows';;
+    mingw*) OS='windows';;
   esac
 }
 
@@ -65,8 +65,10 @@ runAsRoot() {
   fi
 }
 
+# verifySupported checks that the os/arch combination is supported for
+# binary builds.
 verifySupported() {
-  local supported="darwin-amd64\ndarwin-arm64\nlinux-386\nlinux-amd64\nlinux-arm\nlinux-arm64\nlinux-ppc64le\nlinux-s390x\nwindows-amd64"
+  local supported="darwin-amd64\ndarwin-arm64\nlinux-386\nlinux-amd64\nlinux-arm\nlinux-arm64\nlinux-ppc64le\nlinux-s390x\nlinux-riscv64\nwindows-amd64\nwindows-arm64"
   if ! echo "${supported}" | grep -q "${OS}-${ARCH}"; then
     echo "No prebuilt binary for ${OS}-${ARCH}."
     echo "To build from source, go to https://github.com/raniellyferreira/rotate-files"
@@ -199,8 +201,8 @@ testVersion() {
 help () {
   echo "Accepted cli arguments are:"
   echo -e "\t[--help|-h ] ->> prints this help"
-  echo -e "\t[--version|-v <desired_version>] . When not defined it fetches the latest release from GitHub"
-  echo -e "\te.g. --version v3.0.0 or -v canary"
+  echo -e "\t[--version|-v <desired_version>]"
+  echo -e "\te.g. --version v2.4.0  or -v latest"
   echo -e "\t[--no-sudo]  ->> install without sudo"
 }
 
@@ -231,8 +233,12 @@ while [[ $# -gt 0 ]]; do
        shift
        if [[ $# -ne 0 ]]; then
            export DESIRED_VERSION="${1}"
+           if [[ "$1" != "v"* ]]; then
+               echo "Expected version arg ('${DESIRED_VERSION}') to begin with 'v', fixing..."
+               export DESIRED_VERSION="v${1}"
+           fi
        else
-           echo -e "Please provide the desired version. e.g. --version v3.0.0 or -v canary"
+           echo -e "Please provide the desired version. e.g. --version v2.4.0 or -v latest"
            exit 0
        fi
        ;;
