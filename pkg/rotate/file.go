@@ -123,7 +123,7 @@ func (b File) IsSameYear(compare *carbon.Carbon) bool {
 // Files is a slice of File pointers.
 type Files []*File
 
-// Len returns the length of the Files slice.
+// Less compares the elements at the given indexes.
 func (b Files) Less(i, j int) bool {
 	return b[i].Timestamp.Gt(b[j].Timestamp)
 }
@@ -133,7 +133,7 @@ func (b Files) Swap(i, j int) {
 	b[i], b[j] = b[j], b[i]
 }
 
-// Less compares the elements at the given indexes.
+// Len returns the length of the Files slice.
 func (b Files) Len() int {
 	return len(b)
 }
