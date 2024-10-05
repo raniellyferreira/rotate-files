@@ -59,18 +59,27 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 		log.Fatal("Failed to initialize provider:", err)
 	}
 
-	manager := rotate.NewRotationManager(provider)
-	backups, err := manager.ListFiles(path)
+	manager := rotate.NewRotationManager(
+		provider,
+		rotationScheme,
+		path,
+	)
+
+	var summary *rotate.Summary
+	summary, err = manager.RotateFiles()
+
 	if err != nil {
-		log.Fatal("Error listing backups:", err)
+		switch err {
+		case rotate.ErrEmptyFileList:
+			log.Println("No files to rotate")
+			return
+		case rotate.ErrSingleFile:
+			log.Println("Only one file to rotate, ignoring rotation")
+			return
+		default:
+			log.Fatal("Unknown error:", err)
+		}
 	}
-
-	if len(backups) == 0 {
-		log.Println("No files found to rotate")
-		return
-	}
-
-	summary := manager.RotateFiles(backups, rotationScheme)
 
 	if len(summary.ForDelete) > 0 {
 		if !rotationScheme.DryRun {

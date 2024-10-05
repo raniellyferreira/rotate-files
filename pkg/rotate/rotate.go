@@ -24,12 +24,39 @@ import (
 )
 
 type RotationManager struct {
-	provider providers.Provider
+	provider       providers.Provider
+	rotationScheme *RotationScheme
+	path           string
 }
 
-// NewRotationManager creates a new RotationManager for handling backup rotations.
-func NewRotationManager(provider providers.Provider) *RotationManager {
-	return &RotationManager{provider: provider}
+// NewRotationManager creates a new RotationManager with a rotation scheme.
+func NewRotationManager(provider providers.Provider, scheme *RotationScheme, path string) *RotationManager {
+	return &RotationManager{
+		provider:       provider,
+		rotationScheme: scheme,
+		path:           path,
+	}
+}
+
+// Validate checks if the rotation manager is ready to rotate files.
+func (r *RotationManager) Validate(fileList []*File) error {
+	if r.rotationScheme == nil {
+		return ErrNilRotationScheme
+	}
+
+	if r.provider == nil {
+		return ErrNilProvider
+	}
+
+	if len(fileList) == 0 {
+		return ErrEmptyFileList
+	}
+
+	if len(fileList) == 1 {
+		return ErrSingleFile
+	}
+
+	return nil
 }
 
 // ListFiles retrieves a list of files from the specified path.
@@ -39,15 +66,15 @@ func (r *RotationManager) ListFiles(path string) ([]*File, error) {
 		return nil, err
 	}
 
-	files := make([]*File, len(infos))
+	fileList := make([]*File, len(infos))
 	for i, info := range infos {
-		files[i] = &File{
+		fileList[i] = &File{
 			Path:      info.Path,
 			Size:      info.Size,
 			Timestamp: info.Timestamp,
 		}
 	}
-	return files, nil
+	return fileList, nil
 }
 
 // RemoveFile deletes a file from the filesystem using the specified full path.
@@ -55,9 +82,18 @@ func (r *RotationManager) RemoveFile(fullPath string) error {
 	return r.provider.Delete(fullPath)
 }
 
-// RotateFiles categorizes the files based on the rotation scheme and the current time.
-func (r *RotationManager) RotateFiles(files []*File, scheme *RotationScheme) *Summary {
-	return RotateFilesOf(files, scheme, carbon.Now())
+// RotateFiles retrieves the files and categorizes them based on the rotation scheme and the current time.
+func (r *RotationManager) RotateFiles() (*Summary, error) {
+	fileList, err := r.ListFiles(r.path)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.Validate(fileList); err != nil {
+		return nil, err
+	}
+
+	return RotateFilesOf(fileList, r.rotationScheme, carbon.Now()), nil
 }
 
 // RotateFilesOf categorizes the files based on the rotation scheme and the current time.
