@@ -30,6 +30,7 @@ import (
 	"github.com/thatisuday/commando"
 )
 
+// HandlerRotate is the command handler for rotating files.
 func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 	path := args["path"].Value
 	log.Println("Starting rotation on", path)
@@ -81,26 +82,12 @@ func HandlerRotate(args map[string]commando.ArgValue, flags map[string]commando.
 		}
 	}
 
-	if len(summary.ForDelete) > 0 {
-		if !rotationScheme.DryRun {
-			for _, backup := range summary.ForDelete {
-				log.Println("Deleting file...", backup.Path)
-				if err := manager.RemoveFile(backup.Path); err != nil {
-					log.Println("Error deleting file:", err)
-				}
-			}
-		} else {
-			for _, backup := range summary.ForDelete {
-				log.Println("DRYRUN: simulate file delete...", backup.Path)
-			}
-		}
-	} else {
-		log.Println("No files eligible for deletion")
-	}
+	handleFileDeletion(manager, summary, rotationScheme)
 
 	summary.Print()
 }
 
+// initializeProvider initializes the provider based on the path.
 func initializeProvider(path string) (providers.Provider, error) {
 	prov := strings.SplitN(path, "://", 2)
 
@@ -117,5 +104,36 @@ func initializeProvider(path string) (providers.Provider, error) {
 		return azure.NewAzureProvider()
 	default:
 		return files.NewLocalProvider(), nil
+	}
+}
+
+// handleFileDeletion deletes the files from the file provider.
+func handleFileDeletion(manager *rotate.RotationManager, summary *rotate.Summary, scheme *rotate.RotationScheme) {
+	if len(summary.ForDelete) == 0 {
+		log.Println("No files eligible for deletion")
+		return
+	}
+
+	if scheme.DryRun {
+		simulateDeletion(summary)
+	} else {
+		executeDeletion(manager, summary)
+	}
+}
+
+// simulateDeletion prints the files that would be deleted in a dry run.
+func simulateDeletion(summary *rotate.Summary) {
+	for _, backup := range summary.ForDelete {
+		log.Println("DRYRUN: simulate file delete...", backup.Path)
+	}
+}
+
+// executeDeletion deletes the files from the file provider.
+func executeDeletion(manager *rotate.RotationManager, summary *rotate.Summary) {
+	for _, backup := range summary.ForDelete {
+		log.Println("Deleting file...", backup.Path)
+		if err := manager.RemoveFile(backup.Path); err != nil {
+			log.Println("Error deleting file:", err)
+		}
 	}
 }
