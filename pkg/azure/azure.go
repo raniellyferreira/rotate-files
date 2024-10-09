@@ -35,23 +35,12 @@ type AzureProvider struct {
 
 // NewAzureProvider initializes a new AzureProvider using the connection string from environment variables.
 func NewAzureProvider(fullPath string) (*AzureProvider, error) {
-	connectionString := environment.GetEnv("AZURE_STORAGE_CONNECTION_STRING", "")
-
 	var err error
 	var client *azblob.Client
 
-	if connectionString == "" {
-		// Create a new default Azure credential
-		credentials, err := azidentity.NewDefaultAzureCredential(nil)
-		if err != nil {
-			return nil, err
-		}
-
-		// Extract the storage account name from the full path
-		storageAccountName, _, _ := utils.GetAccountContainerAndPath(fullPath)
-
-		// Create a new client using the storage account name and the default credentials
-		client, err = azblob.NewClient(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName), credentials, nil)
+	if connectionString := environment.GetEnv("AZURE_STORAGE_CONNECTION_STRING", ""); connectionString != "" {
+		// Create a new client using the connection string
+		client, err = azblob.NewClientFromConnectionString(connectionString, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -59,8 +48,17 @@ func NewAzureProvider(fullPath string) (*AzureProvider, error) {
 		return &AzureProvider{client: client}, nil
 	}
 
-	// Create a new client using the connection string
-	client, err = azblob.NewClientFromConnectionString(connectionString, nil)
+	// Create a new default Azure credential
+	credentials, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract the storage account name from the full path
+	storageAccountName, _, _ := utils.GetAccountContainerAndPath(fullPath)
+
+	// Create a new client using the storage account name and the default credentials
+	client, err = azblob.NewClient(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName), credentials, nil)
 	if err != nil {
 		return nil, err
 	}
