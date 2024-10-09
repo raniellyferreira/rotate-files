@@ -101,7 +101,7 @@ func initializeProvider(path string) (providers.Provider, error) {
 	case "gc", "gs", "gcs":
 		return google.NewGoogleProvider()
 	case "blob", "azure", "azr", "az":
-		return azure.NewAzureProvider()
+		return azure.NewAzureProvider(path)
 	default:
 		return files.NewLocalProvider(), nil
 	}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/golang-module/carbon"
@@ -33,12 +34,37 @@ type AzureProvider struct {
 }
 
 // NewAzureProvider initializes a new AzureProvider using the connection string from environment variables.
-func NewAzureProvider() (*AzureProvider, error) {
+func NewAzureProvider(fullPath string) (*AzureProvider, error) {
 	connectionString := environment.GetEnv("AZURE_STORAGE_CONNECTION_STRING", "")
-	client, err := azblob.NewClientFromConnectionString(connectionString, nil)
+
+	var err error
+	var client *azblob.Client
+
+	if connectionString == "" {
+		// Create a new default Azure credential
+		credentials, err := azidentity.NewDefaultAzureCredential(nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// Extract the storage account name from the full path
+		storageAccountName, _, _ := utils.GetAccountContainerAndPath(fullPath)
+
+		// Create a new client using the storage account name and the default credentials
+		client, err = azblob.NewClient(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName), credentials, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return &AzureProvider{client: client}, nil
+	}
+
+	// Create a new client using the connection string
+	client, err = azblob.NewClientFromConnectionString(connectionString, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	return &AzureProvider{client: client}, nil
 }
 
