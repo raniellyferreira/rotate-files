@@ -93,9 +93,9 @@ checkDesiredVersion() {
     # Get tag from release URL
     local latest_release_url="https://github.com/raniellyferreira/rotate-files/releases"
     if [ "${HAS_CURL}" == "true" ]; then
-      TAG=$(curl -Ls $latest_release_url | grep 'href="/raniellyferreira/rotate-files/releases/tag/v1.[0-9]*.[0-9]*\"' | sed -E 's/.*\/raniellyferreira\/rotate-files\/releases\/tag\/(v[0-9\.]+)".*/\1/g' | head -1)
+      TAG=$(curl -Ls --fail --tlsv1.2 $latest_release_url | grep 'href="/raniellyferreira/rotate-files/releases/tag/v1.[0-9]*.[0-9]*\"' | sed -E 's/.*\/raniellyferreira\/rotate-files\/releases\/tag\/(v[0-9\.]+)".*/\1/g' | head -1)
     elif [ "${HAS_WGET}" == "true" ]; then
-      TAG=$(wget $latest_release_url -O - 2>&1 | grep 'href="/raniellyferreira/rotate-files/releases/tag/v1.[0-9]*.[0-9]*\"' | sed -E 's/.*\/raniellyferreira\/rotate-files\/releases\/tag\/(v[0-9\.]+)".*/\1/g' | head -1)
+      TAG=$(wget --secure-protocol=TLSv1_2 $latest_release_url -O - 2>&1 | grep 'href="/raniellyferreira/rotate-files/releases/tag/v1.[0-9]*.[0-9]*\"' | sed -E 's/.*\/raniellyferreira\/rotate-files\/releases\/tag\/(v[0-9\.]+)".*/\1/g' | head -1)
     fi
   else
     TAG=$DESIRED_VERSION
@@ -131,7 +131,7 @@ verifyFile() {
 # verifyChecksum verifies the SHA256 checksum of the binary package.
 verifyChecksum() {
   printf "Verifying checksum... "
-  local sum=$(openssl sha1 -sha256 ${ROTATE_TMP_FILE} | awk '{print $2}')
+  local sum=$(openssl sha256 ${ROTATE_TMP_FILE} | awk '{print $2}')
   local expected_sum=$(cat ${ROTATE_SUM_FILE})
   if [ "$sum" != "$expected_sum" ]; then
     echo "SHA sum of ${ROTATE_TMP_FILE} does not match with ${expected_sum}. Aborting."
@@ -151,11 +151,11 @@ downloadFile() {
   ROTATE_SUM_FILE="$ROTATE_TMP_ROOT/$ROTATE_DIST.sha256"
   echo "Downloading $DOWNLOAD_URL"
   if [ "${HAS_CURL}" == "true" ]; then
-    curl -SsL "$CHECKSUM_URL" -o "$ROTATE_SUM_FILE"
-    curl -SsL "$DOWNLOAD_URL" -o "$ROTATE_TMP_FILE"
+    curl -SsL --fail --tlsv1.2 "$CHECKSUM_URL" -o "$ROTATE_SUM_FILE"
+    curl -SsL --fail --tlsv1.2 "$DOWNLOAD_URL" -o "$ROTATE_TMP_FILE"
   elif [ "${HAS_WGET}" == "true" ]; then
-    wget -q -O "$ROTATE_SUM_FILE" "$CHECKSUM_URL"
-    wget -q -O "$ROTATE_TMP_FILE" "$DOWNLOAD_URL"
+    wget --secure-protocol=TLSv1_2 -q -O "$ROTATE_SUM_FILE" "$CHECKSUM_URL"
+    wget --secure-protocol=TLSv1_2 -q -O "$ROTATE_TMP_FILE" "$DOWNLOAD_URL"
   fi
 }
 
