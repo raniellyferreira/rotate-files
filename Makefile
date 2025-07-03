@@ -155,7 +155,7 @@ fetch-dist:
 	mkdir -p _dist/${VERSION}/;
 	\
 	for obj in ${TARGET_OBJS} ; do \
-		curl -sSL --output-dir _dist/${VERSION}/ -o rotate-$${obj} https://awapi-rotate.s3.sa-east-1.amazonaws.com/${VERSION}/rotate-$${obj} ; \
+		curl -sSL --fail --tlsv1.2 --output-dir _dist/${VERSION}/ -o rotate-$${obj} https://awapi-rotate.s3.sa-east-1.amazonaws.com/${VERSION}/rotate-$${obj} ; \
 	done
 
 .PHONY: sign
