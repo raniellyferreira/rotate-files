@@ -1,6 +1,6 @@
 module github.com/raniellyferreira/rotate-files
 
-go 1.20
+go 1.26.3
 
 require (
 	cloud.google.com/go/storage v1.43.0
